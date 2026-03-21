@@ -1,19 +1,23 @@
-import { BaseSampleProvider } from './BaseSampleProvider'
+import { BaseSampler, SamplerOptions } from './BaseSampler'
 import { WavDecoder } from './WavDecoder'
+
+export interface WebSamplerOptions extends SamplerOptions {
+  baseUrl: string;
+}
 
 /**
  * Sample provider that fetches audio files over HTTP/HTTPS.
  */
-export class WebSampleProvider extends BaseSampleProvider {
+export class WebSampler extends BaseSampler {
   private readonly decoder: WavDecoder = new WavDecoder()
+  private readonly baseUrl: string;
 
   /**
-   * @param baseUrl 웹 음원 폴더 주소 (예: "https://example.com/sounds")
-   * @param targetSampleRate 목표 샘플레이트
-   * @param maxRetries 최대 실패 재시도 횟수
+   * @param options 샘플 프로바이더 옵션 (baseUrl 포함)
    */
-  constructor(private baseUrl: string, targetSampleRate: number, maxRetries: number = 3) {
-    super(targetSampleRate, maxRetries)
+  constructor(options: WebSamplerOptions) {
+    super(options)
+    this.baseUrl = options.baseUrl;
   }
 
   protected async fetchSample(phoneme: string): Promise<Float32Array | undefined> {
@@ -29,7 +33,7 @@ export class WebSampleProvider extends BaseSampleProvider {
   public async loadSampleFromUrl(phoneme: string, url: string): Promise<void> {
     const floatArray = await this.fetchFromUrl(url)
     if (floatArray) {
-      await this.loadSample(phoneme, floatArray, this.targetSampleRate)
+      await this.loadSample(phoneme, floatArray, this.sampleRate)
     }
   }
 
@@ -41,20 +45,20 @@ export class WebSampleProvider extends BaseSampleProvider {
         if (response.status === 404) {
           return undefined
         }
-        throw new Error(`[WebSampleProvider] HTTP 에러: ${response.status} ${response.statusText} (${url})`)
+        throw new Error(`[WebSampler] HTTP 에러: ${response.status} ${response.statusText} (${url})`)
       }
 
       const arrayBuffer = await response.arrayBuffer()
       const { buffer: floatArray, sampleRate } = this.decoder.decode(arrayBuffer)
 
-      if (sampleRate !== this.targetSampleRate) {
-        throw new Error(`[WebSampleProvider] 샘플레이트 불일치: 기대값 ${this.targetSampleRate}, 실제값 ${sampleRate} (${url})`)
+      if (sampleRate !== this.sampleRate) {
+        throw new Error(`[WebSampler] 샘플레이트 불일치: 기대값 ${this.sampleRate}, 실제값 ${sampleRate} (${url})`)
       }
 
-      const finalArray = this.resample(floatArray, sampleRate, this.targetSampleRate)
+      const finalArray = this.resample(floatArray, sampleRate, this.sampleRate)
       return finalArray
     } catch (e) {
-      console.warn(`[WebSampleProvider] 샘플 로드 실패: ${url}`, e)
+      console.warn(`[WebSampler] 샘플 로드 실패: ${url}`, e)
       throw e
     }
   }

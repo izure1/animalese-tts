@@ -1,13 +1,24 @@
-import type { SampleProvider } from '../interfaces'
+import type { Sampler } from '../interfaces'
+
+export interface SamplerOptions {
+  sampleRate: number;
+  maxRetries?: number;
+}
 
 /**
  * Abstract base class for fetching and caching audio samples.
  */
-export abstract class BaseSampleProvider implements SampleProvider {
+export abstract class BaseSampler implements Sampler {
   protected readonly cache: Map<string, Float32Array> = new Map()
   protected readonly failureCount: Map<string, number> = new Map()
 
-  constructor(public readonly targetSampleRate: number, public readonly maxRetries: number = 3) { }
+  public readonly sampleRate: number;
+  public readonly maxRetries: number;
+
+  constructor(options: SamplerOptions) {
+    this.sampleRate = options.sampleRate;
+    this.maxRetries = options.maxRetries ?? 3;
+  }
 
   public async getSample(phoneme: string): Promise<Float32Array | undefined> {
     if (this.cache.has(phoneme)) {
@@ -37,8 +48,8 @@ export abstract class BaseSampleProvider implements SampleProvider {
   protected abstract fetchSample(phoneme: string): Promise<Float32Array | undefined>
 
   public async loadSample(phoneme: string, buffer: Float32Array, sampleRate: number): Promise<void> {
-    if (sampleRate !== this.targetSampleRate) {
-      throw new Error(`[BaseCachedSampleProvider] 샘플레이트 불일치: 기대값 ${this.targetSampleRate}, 실제값 ${sampleRate}`)
+    if (sampleRate !== this.sampleRate) {
+      throw new Error(`[BaseSampler] 샘플레이트 불일치: 기대값 ${this.sampleRate}, 실제값 ${sampleRate}`)
     }
     this.cache.set(phoneme, buffer)
   }

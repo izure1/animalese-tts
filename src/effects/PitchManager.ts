@@ -1,13 +1,44 @@
 import type { AudioEffect } from '../interfaces'
 
+export interface PitchManagerOptions {
+  pitch?: number;
+  speed?: number;
+  randomness?: number;
+  melodyRate?: number;
+  melodyAmplitude?: number;
+}
+
 /**
  * Audio effect that manages pitch and speed adjustment for synthesized speech.
  */
 export class PitchManager implements AudioEffect {
-  constructor(public basePitch: number = 1.0, private speedRatio: number = 1.0, public randomness: number = 0.0) { }
+  public readonly pitch: number;
+  public readonly speed: number;
+  public readonly randomness: number;
+  public readonly melodyRate: number;
+  public readonly melodyAmplitude: number;
+
+  constructor(options: PitchManagerOptions = {}) {
+    this.pitch = options.pitch ?? 1.0;
+    this.speed = options.speed ?? 1.0;
+    this.randomness = options.randomness ?? 0.0;
+    this.melodyRate = options.melodyRate ?? 0.05;
+    this.melodyAmplitude = options.melodyAmplitude ?? 0.1;
+  }
+
+  public calculatePitch(charIndex: number): number {
+    let currentPitch = this.pitch;
+
+    const stepDegrees = 360 * this.melodyRate;
+    const radianStep = stepDegrees * (Math.PI / 180);
+
+    currentPitch += Math.sin(charIndex * radianStep) * this.melodyAmplitude;
+
+    return currentPitch + (Math.random() - 0.5) * this.randomness;
+  }
 
   public apply(buffer: Float32Array, pitchRatio: number): Float32Array {
-    if (pitchRatio === 1.0 && this.speedRatio === 1.0) return buffer
+    if (pitchRatio === 1.0 && this.speed === 1.0) return buffer
     if (buffer.length === 0) return buffer
 
     const pitchedLength = Math.floor(buffer.length / pitchRatio)
@@ -22,7 +53,7 @@ export class PitchManager implements AudioEffect {
       pitchedBuffer[i] = v1 + srcFrac * (v2 - v1)
     }
 
-    const targetLength = Math.floor(buffer.length / this.speedRatio)
+    const targetLength = Math.floor(buffer.length / this.speed)
     const finalBuffer = new Float32Array(targetLength)
 
     for (let i = 0; i < targetLength; i++) {

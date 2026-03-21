@@ -16,7 +16,8 @@ export interface TextAnalyzer {
 /**
  * Interface for providing audio samples for phonemes.
  */
-export interface SampleProvider {
+export interface Sampler {
+  sampleRate: number;
   getSample(phoneme: string): Promise<Float32Array | undefined>
   loadSample(phoneme: string, buffer: Float32Array, sampleRate: number): Promise<void>
 }
@@ -25,8 +26,9 @@ export interface SampleProvider {
  * Interface for applying audio effects like pitch shifting.
  */
 export interface AudioEffect {
-  basePitch?: number;
+  pitch?: number;
   randomness?: number;
+  calculatePitch(charIndex: number): number;
   apply(buffer: Float32Array, pitchRatio: number): Float32Array
 }
 

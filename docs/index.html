@@ -76,7 +76,7 @@
       KoreanAnalyzer,
       EnglishAnalyzer,
       JapaneseAnalyzer,
-      WebSampleProvider,
+      WebSampler,
       PitchManager
     } from './animalese.browser.mjs';
 
@@ -85,8 +85,8 @@
       const logEl = document.getElementById('log');
 
       let audioContext;
-      const sampleRate = 44100;
-      const baseUrl = './sounds';
+      let sampleRate = 0;
+      let baseUrl = './sounds';
 
       // WebSampleProvider preload using a known list or let it block dynamically
       // For this demo, WebSampleProvider will fetch dynamically on-the-fly.
@@ -97,9 +97,6 @@
       }
 
       playBtn.addEventListener('click', async () => {
-        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
-        if (audioContext.state === 'suspended') await audioContext.resume();
-
         const text = document.getElementById('text').value;
         const pitch = parseFloat(document.getElementById('pitch').value);
         const speed = parseFloat(document.getElementById('speed').value);
@@ -118,20 +115,30 @@
         playBtn.disabled = true;
 
         let analyzer;
-        if (lang === 'en') analyzer = new EnglishAnalyzer();
-        else if (lang === 'ja') analyzer = new JapaneseAnalyzer();
-        else analyzer = new KoreanAnalyzer();
+        if (lang === 'en') {
+          analyzer = new EnglishAnalyzer();
+          baseUrl = '/sounds/english';
+        } else if (lang === 'ja') {
+          analyzer = new JapaneseAnalyzer();
+          sampleRate = 48000;
+          baseUrl = '/sounds/japanese';
+          console.log(analyzer, baseUrl);
+        } else {
+          analyzer = new KoreanAnalyzer();
+          sampleRate = 44100;
+          baseUrl = '/sounds/korean';
+        }
+
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
+        if (audioContext.state === 'suspended') await audioContext.resume();
 
         const config = {
           analyzer,
-          sampleProvider: new WebSampleProvider(baseUrl, sampleRate, maxRetries),
-          effect: new PitchManager(pitch, speed, randomness),
-          sampleRate,
-          melodyRate,
-          melodyAmplitude,
+          sampler: new WebSampler({ sampleRate, maxRetries, baseUrl }),
+          effect: new PitchManager({ pitch, speed, randomness, melodyRate, melodyAmplitude }),
           spaceDelay,
           punctuationDelay,
-          punctuations
+          punctuations,
         };
 
         const engine = new AnimaleseEngine(config);

@@ -1,26 +1,29 @@
-import { TextAnalyzer, SampleProvider, AudioEffect, SynthesisOutput } from './interfaces'
+import { TextAnalyzer, Sampler, AudioEffect, SynthesisOutput } from './interfaces'
 import { AudioConverter } from './core/AudioConverter'
 
 /**
  * Configuration options for the Animalese Engine.
  */
 export interface AnimalVoiceConfig {
-  analyzer: TextAnalyzer
-  sampleProvider: SampleProvider
-  effect: AudioEffect
-  sampleRate: number
-  melodyRate?: number
-  melodyAmplitude?: number
-  spaceDelay?: number
-  punctuationDelay?: number
-  punctuations?: string[]
+  /** Text analyzer used to split and identify phonemes. */
+  analyzer: TextAnalyzer;
+  /** Provider that supplies the raw audio samples for each phoneme. */
+  sampler: Sampler;
+  /** Audio effect to apply, typically handles pitch and speed adjustments. */
+  effect: AudioEffect;
+  /** Time in seconds to delay or pause when encountering a space character. */
+  spaceDelay?: number;
+  /** Time in seconds to delay or pause when encountering a punctuation character. */
+  punctuationDelay?: number;
+  /** Array of characters considered as punctuations. */
+  punctuations?: string[];
 }
 
 /**
  * The core engine that synthesizes text into animal-like speech sounds.
  */
 export class AnimaleseEngine {
-  constructor(private config: AnimalVoiceConfig) { }
+  constructor(private readonly config: AnimalVoiceConfig) { }
 
   /**
    * Synthesizes the given text into an asynchronous stream of audio outputs.
@@ -47,6 +50,8 @@ export class AnimaleseEngine {
       let pendingPhoneme: string = ''
       let shouldMergeNext = false
 
+      console.log(tokens)
+
       for (const token of tokens) {
         if (!token.phoneme) continue
 
@@ -62,7 +67,7 @@ export class AnimaleseEngine {
         }
 
         if (isSpace && this.config.spaceDelay) {
-          const delaySamples = Math.floor(this.config.spaceDelay * this.config.sampleRate)
+          const delaySamples = Math.floor(this.config.spaceDelay * this.config.sampler.sampleRate)
           if (delaySamples > 0) {
             const emptyBuffer = new Float32Array(delaySamples)
             totalAudioSamples += delaySamples
@@ -83,7 +88,7 @@ export class AnimaleseEngine {
         }
 
         if (isPunctuation && this.config.punctuationDelay) {
-          const delaySamples = Math.floor(this.config.punctuationDelay * this.config.sampleRate)
+          const delaySamples = Math.floor(this.config.punctuationDelay * this.config.sampler.sampleRate)
           if (delaySamples > 0) {
             const emptyBuffer = new Float32Array(delaySamples)
             totalAudioSamples += delaySamples
@@ -103,7 +108,7 @@ export class AnimaleseEngine {
           continue
         }
 
-        const rawBuffer = await this.config.sampleProvider.getSample(token.phoneme)
+        const rawBuffer = await this.config.sampler.getSample(token.phoneme)
         if (!rawBuffer) continue
 
         if (shouldMergeNext && pendingBuffer) {
@@ -121,7 +126,7 @@ export class AnimaleseEngine {
             pendingPhoneme = pendingPhoneme + token.phoneme
             shouldMergeNext = true
           } else {
-            const pitch = this.calculatePitch(charIndex++)
+            const pitch = this.config.effect.calculatePitch(charIndex++)
             const processedBuffer = this.config.effect.apply(combined, pitch)
 
             if (lastBufferLength === 0) lastBufferLength = processedBuffer.length
@@ -147,7 +152,7 @@ export class AnimaleseEngine {
           }
         } else {
           if (pendingBuffer) {
-            const pitch = this.calculatePitch(charIndex++)
+            const pitch = this.config.effect.calculatePitch(charIndex++)
             const processedBuffer = this.config.effect.apply(pendingBuffer, pitch)
 
             if (lastBufferLength === 0) lastBufferLength = processedBuffer.length
@@ -173,7 +178,7 @@ export class AnimaleseEngine {
             pendingPhoneme = token.phoneme
             shouldMergeNext = true
           } else {
-            const pitch = this.calculatePitch(charIndex++)
+            const pitch = this.config.effect.calculatePitch(charIndex++)
             const processedBuffer = this.config.effect.apply(rawBuffer, pitch)
 
             if (lastBufferLength === 0) lastBufferLength = processedBuffer.length
@@ -200,7 +205,7 @@ export class AnimaleseEngine {
       }
 
       if (pendingBuffer) {
-        const pitch = this.calculatePitch(charIndex++)
+        const pitch = this.config.effect.calculatePitch(charIndex++)
         const processedBuffer = this.config.effect.apply(pendingBuffer, pitch)
 
         if (lastBufferLength === 0) lastBufferLength = processedBuffer.length
@@ -230,18 +235,5 @@ export class AnimaleseEngine {
       const emptyBuffer = new Float32Array(0)
       yield { char: pendingUnsupportedChars, phoneme: '', pitch: 1.0, buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer }
     }
-  }
-
-  public calculatePitch(charIndex: number): number {
-    let pitch = this.config.effect.basePitch ?? 1.0
-
-    const amplitude = this.config.melodyAmplitude ?? 0.1
-    const melodyRate = this.config.melodyRate || 0.05
-    const stepDegrees = 360 * melodyRate
-    const radianStep = stepDegrees * (Math.PI / 180)
-
-    pitch += Math.sin(charIndex * radianStep) * amplitude
-
-    return pitch + (Math.random() - 0.5) * (this.config.effect.randomness ?? 0.0)
   }
 }

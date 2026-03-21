@@ -23,6 +23,9 @@
       }
     }
   },
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
     "test": "jest",
     "build:types": "tsc --project tsconfig.build.json --outDir dist/types",

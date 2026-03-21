@@ -2,16 +2,22 @@ import * as fs from 'node:fs/promises'
 import { constants } from 'node:fs'
 import * as path from 'node:path'
 import { WavDecoder } from './WavDecoder'
-import { BaseSampleProvider } from './BaseSampleProvider'
+import { BaseSampler, SamplerOptions } from './BaseSampler'
+
+export interface FileSystemSamplerOptions extends SamplerOptions {
+  samplesDirectory: string;
+}
 
 /**
  * Sample provider that fetches audio files from the local file system.
  */
-export class FileSystemSampleProvider extends BaseSampleProvider {
+export class FileSystemSampler extends BaseSampler {
   private readonly decoder: WavDecoder = new WavDecoder()
+  private readonly samplesDirectory: string;
 
-  constructor(targetSampleRate: number, private samplesDirectory: string, maxRetries: number = 3) {
-    super(targetSampleRate, maxRetries)
+  constructor(options: FileSystemSamplerOptions) {
+    super(options)
+    this.samplesDirectory = options.samplesDirectory;
   }
 
   protected async fetchSample(phoneme: string): Promise<Float32Array | undefined> {
@@ -22,19 +28,19 @@ export class FileSystemSampleProvider extends BaseSampleProvider {
       const fileBuffer = await fs.readFile(filePath)
       const { buffer: floatArray, sampleRate } = this.decoder.decode(fileBuffer)
 
-      if (sampleRate !== this.targetSampleRate) {
-        throw new Error(`[FileSystemSampleProvider] 샘플레이트 불일치: 기대값 ${this.targetSampleRate}, 실제값 ${sampleRate} (${filePath})`)
+      if (sampleRate !== this.sampleRate) {
+        throw new Error(`[FileSystemSampler] 샘플레이트 불일치: 기대값 ${this.sampleRate}, 실제값 ${sampleRate} (${filePath})`)
       }
 
       // resample is still called just in case but we threw error if they don't match.
       // Doing resample doesn't hurt.
-      const finalArray = this.resample(floatArray, sampleRate, this.targetSampleRate)
+      const finalArray = this.resample(floatArray, sampleRate, this.sampleRate)
       return finalArray
     } catch (e: any) {
       if (e.code === 'ENOENT') {
         return undefined
       }
-      console.warn(`[FileSystemSampleProvider] 샘플 로드 실패: ${phoneme}`, e)
+      console.warn(`[FileSystemSampler] 샘플 로드 실패: ${phoneme}`, e)
       throw e
     }
   }
@@ -47,7 +53,7 @@ export class FileSystemSampleProvider extends BaseSampleProvider {
     try {
       await fs.access(directoryPath, constants.R_OK)
     } catch (e) {
-      console.warn(`[FileSystemSampleProvider] 디렉토리를 찾을 수 없습니다: ${directoryPath}`)
+      console.warn(`[FileSystemSampler] 디렉토리를 찾을 수 없습니다: ${directoryPath}`)
       return
     }
 
@@ -61,14 +67,14 @@ export class FileSystemSampleProvider extends BaseSampleProvider {
           const fileBuffer = await fs.readFile(filePath)
           const { buffer: floatArray, sampleRate } = this.decoder.decode(fileBuffer)
 
-          if (sampleRate !== this.targetSampleRate) {
-            throw new Error(`[FileSystemSampleProvider] 디렉토리 샘플레이트 불일치: 기대값 ${this.targetSampleRate}, 실제값 ${sampleRate} (${filePath})`)
+          if (sampleRate !== this.sampleRate) {
+            throw new Error(`[FileSystemSampler] 디렉토리 샘플레이트 불일치: 기대값 ${this.sampleRate}, 실제값 ${sampleRate} (${filePath})`)
           }
 
-          const finalArray = this.resample(floatArray, sampleRate, this.targetSampleRate)
+          const finalArray = this.resample(floatArray, sampleRate, this.sampleRate)
           await this.loadSample(phoneme, finalArray, sampleRate)
         } catch (e) {
-          console.warn(`[FileSystemSampleProvider] 파일 로드 실패: ${file}`, e)
+          console.warn(`[FileSystemSampler] 파일 로드 실패: ${file}`, e)
           throw e
         }
       }

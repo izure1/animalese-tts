@@ -1,4 +1,4 @@
 export * from './index.browser'
-export * from './core/FileSystemSampleProvider'
-export * from './core/WebSampleProvider'
+export * from './core/FileSystemSampler'
+export * from './core/WebSampler'
 export * from './playback/NodePlaybackStrategy'
