@@ -6,6 +6,10 @@ export interface AnimalVoiceConfig {
   analyzer: TextAnalyzer
   sampleProvider: SampleProvider
   effect: AudioEffect
+  sampleRate?: number
+  spaceDelay?: number
+  punctuationDelay?: number
+  punctuations?: string[]
 }
 
 export class AnimaleseEngine {
@@ -22,18 +26,35 @@ export class AnimaleseEngine {
       for (const token of tokens) {
         if (!token.phoneme) continue
 
+        const isSpace = token.phoneme === ' ' || token.phoneme === '　'
+        const punctuations = this.config.punctuations || ['.', ',', '!', '?', "'", '"', '(', ')', '~', '。', '、', '！', '？']
+        const isPunctuation = punctuations.includes(token.phoneme)
+
+        if (isSpace && this.config.spaceDelay) {
+          const delaySamples = Math.floor(this.config.spaceDelay * (this.config.sampleRate || 22050))
+          if (delaySamples > 0) {
+            yield { phoneme: ' ', pitch: 1.0, buffer: new Float32Array(delaySamples) }
+          }
+          continue
+        }
+
+        if (isPunctuation && this.config.punctuationDelay) {
+          const delaySamples = Math.floor(this.config.punctuationDelay * (this.config.sampleRate || 22050))
+          if (delaySamples > 0) {
+            yield { phoneme: token.phoneme, pitch: 1.0, buffer: new Float32Array(delaySamples) }
+          }
+          continue
+        }
+
         const rawBuffer = this.config.sampleProvider.getSample(token.phoneme)
         if (!rawBuffer) continue
 
-        const pitch = this.calculateRandomizedPitch()
-        const processedBuffer = this.config.effect.apply(rawBuffer, pitch)
-
         if (shouldMergeNext && pendingBuffer) {
-          const maxLength = Math.max(pendingBuffer.length, processedBuffer.length)
+          const maxLength = Math.max(pendingBuffer.length, rawBuffer.length)
           const combined = new Float32Array(maxLength)
           for (let i = 0; i < maxLength; i++) {
             const v1 = i < pendingBuffer.length ? pendingBuffer[i] : 0
-            const v2 = i < processedBuffer.length ? processedBuffer[i] : 0
+            const v2 = i < rawBuffer.length ? rawBuffer[i] : 0
             const sum = v1 + v2
             combined[i] = Math.max(-1.0, Math.min(1.0, sum))
           }
@@ -43,21 +64,27 @@ export class AnimaleseEngine {
             pendingPhoneme = pendingPhoneme + token.phoneme
             shouldMergeNext = true
           } else {
-            yield { phoneme: pendingPhoneme + token.phoneme, pitch, buffer: combined }
+            const pitch = this.calculateRandomizedPitch()
+            const processedBuffer = this.config.effect.apply(combined, pitch)
+            yield { phoneme: pendingPhoneme + token.phoneme, pitch, buffer: processedBuffer }
             pendingBuffer = null
             pendingPhoneme = ''
             shouldMergeNext = false
           }
         } else {
           if (pendingBuffer) {
-            yield { phoneme: pendingPhoneme, pitch, buffer: pendingBuffer }
+            const pitch = this.calculateRandomizedPitch()
+            const processedBuffer = this.config.effect.apply(pendingBuffer, pitch)
+            yield { phoneme: pendingPhoneme, pitch, buffer: processedBuffer }
           }
 
           if (token.mergeWithNext) {
-            pendingBuffer = processedBuffer
+            pendingBuffer = rawBuffer
             pendingPhoneme = token.phoneme
             shouldMergeNext = true
           } else {
+            const pitch = this.calculateRandomizedPitch()
+            const processedBuffer = this.config.effect.apply(rawBuffer, pitch)
             yield { phoneme: token.phoneme, pitch, buffer: processedBuffer }
             pendingBuffer = null
             pendingPhoneme = ''
@@ -67,7 +94,9 @@ export class AnimaleseEngine {
       }
 
       if (pendingBuffer) {
-        yield { phoneme: pendingPhoneme, pitch: this.calculateRandomizedPitch(), buffer: pendingBuffer }
+        const pitch = this.calculateRandomizedPitch()
+        const processedBuffer = this.config.effect.apply(pendingBuffer, pitch)
+        yield { phoneme: pendingPhoneme, pitch, buffer: processedBuffer }
       }
     }
   }

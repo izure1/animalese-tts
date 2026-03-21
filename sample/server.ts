@@ -45,6 +45,10 @@ app.get('/api/stream', async (req, res) => {
   const speed = parseFloat(req.query.speed as string) || 3.0
   const lang = (req.query.lang as string) || 'ko'
   const randomness = req.query.randomness !== undefined ? parseFloat(req.query.randomness as string) : 0.01
+  const spaceDelay = req.query.spaceDelay !== undefined ? parseFloat(req.query.spaceDelay as string) : 0.1
+  const punctuationDelay = req.query.punctuationDelay !== undefined ? parseFloat(req.query.punctuationDelay as string) : 0.3
+  const punctuationsParam = req.query.punctuations as string
+  const punctuations = punctuationsParam ? punctuationsParam.split('') : undefined
 
   // 클라이언트가 요청한 언어 분석기 매핑
   let analyzer
@@ -57,7 +61,11 @@ app.get('/api/stream', async (req, res) => {
     randomness,
     analyzer,
     sampleProvider,
-    effect: new GranularPitchShifter(speed) // 피치 시프터 및 재생속도 적용
+    effect: new GranularPitchShifter(speed), // 피치 시프터 및 재생속도 적용
+    sampleRate,
+    spaceDelay,
+    punctuationDelay,
+    punctuations
   }
 
   const engine = new AnimaleseEngine(config)

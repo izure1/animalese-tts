@@ -34,12 +34,12 @@ describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
     sampleProvider.loadSample('ㄴ', buffer)
     sampleProvider.loadSample('ㅕ', buffer)
 
-    // '안녕' -> 'ㅏ', 'ㄴ', 'ㄴ', 'ㅕ', 'ㅇ'(생략) -> 총 4개의 음소가 유효함 (샘플 있음)
+    // '안녕' -> 'ㅏ', 'ㄴ', 'ㄴ', 'ㅕ', 'ㅇ'(생략) -> '안', '녕' 각각 병합되어 총 2번의 오디오 재생이 유효함
     for await (const result of engine.synthesize('안녕')) {
       await mockStrategy.play(result.buffer)
     }
 
-    expect(mockStrategy.play).toHaveBeenCalledTimes(3)
+    expect(mockStrategy.play).toHaveBeenCalledTimes(2)
   })
 
   it('calculateRandomizedPitch: 피치는 randomness 기본 범위 내에서 랜덤하게 생성되어야 한다', () => {

@@ -9,6 +9,8 @@ export class JapaneseAnalyzer implements TextAnalyzer {
         phonemes.push([{ phoneme: char, mergeWithNext: false }])
       } else if (/[a-zA-Z]/.test(char)) {
         phonemes.push([{ phoneme: char.toLowerCase(), mergeWithNext: false }])
+      } else {
+        phonemes.push([{ phoneme: char, mergeWithNext: false }])
       }
     }
 

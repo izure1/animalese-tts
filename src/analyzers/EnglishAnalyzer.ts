@@ -9,6 +9,8 @@ export class EnglishAnalyzer implements TextAnalyzer {
     for (const char of normalizedText.split('')) {
       if (/[a-z]/.test(char)) {
         phonemes.push([{ phoneme: char, mergeWithNext: false }])
+      } else {
+        phonemes.push([{ phoneme: char, mergeWithNext: false }])
       }
     }
 
