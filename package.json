@@ -1,0 +1,43 @@
+{
+  "name": "animalese-tts",
+  "version": "0.0.1-alpha.0",
+  "description": "Animalese TTS Implementation",
+  "main": "dist/animalese.node.cjs",
+  "module": "dist/animalese.browser.mjs",
+  "browser": "dist/animalese.browser.mjs",
+  "types": "dist/types/index.node.d.ts",
+  "exports": {
+    ".": {
+      "browser": {
+        "types": "./dist/types/index.browser.d.ts",
+        "import": "./dist/animalese.browser.mjs"
+      },
+      "node": {
+        "types": "./dist/types/index.node.d.ts",
+        "require": "./dist/animalese.node.cjs"
+      },
+      "default": {
+        "types": "./dist/types/index.node.d.ts",
+        "require": "./dist/animalese.node.cjs",
+        "import": "./dist/animalese.browser.mjs"
+      }
+    }
+  },
+  "scripts": {
+    "test": "jest",
+    "build:types": "tsc --project tsconfig.build.json --outDir dist/types",
+    "build": "node build/esbuild.config.js && npm run build:types",
+    "dev": "npx tsx sample/server.ts"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^29.5.0",
+    "cors": "^2.8.6",
+    "esbuild": "^0.27.4",
+    "express": "^5.2.1",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  }
+}

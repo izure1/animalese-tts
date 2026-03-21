@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Animalese Streaming Client</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #222;
+      color: #eee;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #333;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      color: #88c0d0;
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: none;
+      border-radius: 4px;
+      background: #444;
+      color: white;
+    }
+
+    button {
+      width: 100%;
+      background: #a3be8c;
+      color: #222;
+      border: none;
+      padding: 1rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #8fbcbb;
+    }
+
+    #log {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #111;
+      font-family: monospace;
+      border-radius: 4px;
+      height: 100px;
+      overflow-y: auto;
+      color: #a3be8c;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🗣️ Animalese TTS Streming Demo</h1>
+
+    <label>언어</label>
+    <select id="lang">
+      <option value="ko">한국어 (Korean)</option>
+      <option value="en">영어 (English)</option>
+      <option value="ja">일본어 (Japanese)</option>
+    </select>
+
+    <label>텍스트 문장</label>
+    <input type="text" id="text" value="안녕하세요 세상아 테스트 스트리밍 피치 조절 가능합니다" />
+
+    <label>Pitch 배율 (기본 1.5배)</label>
+    <input type="number" id="pitch" value="1.5" step="0.1" min="0.5" max="3.0" />
+
+    <label>Speed 배율 (기본 3.0배)</label>
+    <input type="number" id="speed" value="3.0" step="0.1" min="0.5" max="5.0" />
+
+    <button id="playBtn">▶️ 스트리밍 재생 시작</button>
+    <div id="log">안내: 버튼을 누르면 서버와 스트리밍 파이프라인이 열립니다.</div>
+  </div>
+
+  <script>
+    const playBtn = document.getElementById('playBtn');
+    const logEl = document.getElementById('log');
+
+    // Web Audio API Context 초기화 (유저 상호작용 후)
+    let audioContext;
+
+    function log(msg) {
+      logEl.innerHTML += `<div>${msg}</div>`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    playBtn.addEventListener('click', async () => {
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') await audioContext.resume();
+
+      const text = document.getElementById('text').value;
+      const pitch = document.getElementById('pitch').value;
+      const speed = document.getElementById('speed').value;
+      const lang = document.getElementById('lang').value;
+
+      log(`[Client] 서버에 '${text}' (Pitch: ${pitch}, Speed: ${speed}) 스트리밍 요청 개시...`);
+      playBtn.disabled = true;
+
+      try {
+        // Fetch API를 활용하여 스트리밍 연결 수립
+        const response = await fetch(`/api/stream?text=${encodeURIComponent(text)}&pitch=${pitch}&speed=${speed}&lang=${lang}`);
+        const reader = response.body.getReader();
+
+        // 서버가 전달한 실제 WAV 샘플레이트 (기본값 22050)
+        const sampleRate = parseInt(response.headers.get('X-Sample-Rate') || '22050', 10);
+
+        // 모든 청크를 누적합니다 (청크 경계 미정렬으로 인한 크래클 방지)
+        const chunks = [];
+        let totalLength = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          totalLength += value.byteLength;
+        }
+
+        // 누적된 청크를 하나의 연속 버퍼로 병합합니다
+        const merged = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of chunks) {
+          merged.set(chunk, offset);
+          offset += chunk.byteLength;
+        }
+
+        // 16-bit PCM (Little Endian) → Float32Array 로 사운드 복원
+        const sampleCount = Math.floor(totalLength / 2);
+        const dataView = new DataView(merged.buffer);
+        const float32Array = new Float32Array(sampleCount);
+        for (let i = 0; i < sampleCount; i++) {
+          const int16 = dataView.getInt16(i * 2, true);
+          float32Array[i] = int16 / (int16 < 0 ? 32768.0 : 32767.0);
+        }
+
+        // AudioBuffer를 올바른 샘플레이트로 생성하여 재생합니다
+        const audioBuffer = audioContext.createBuffer(1, float32Array.length, sampleRate);
+        audioBuffer.copyToChannel(float32Array, 0);
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+
+        log(`[Client] 수신 완료! 샘플레이트: ${sampleRate}Hz, 샘플 수: ${sampleCount}`);
+      } catch (err) {
+        log(`[Error] 스트리밍 실패: ${err.message}`);
+      } finally {
+        playBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+
+</html>
