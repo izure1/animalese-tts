@@ -1,5 +1,10 @@
+export interface PhonemeToken {
+  phoneme: string;
+  mergeWithNext: boolean;
+}
+
 export interface TextAnalyzer {
-  analyze(text: string): string[]
+  analyze(text: string): PhonemeToken[]
 }
 
 export interface SampleProvider {
@@ -13,4 +18,10 @@ export interface AudioEffect {
 
 export interface PlaybackStrategy {
   play(buffer: Float32Array): Promise<void>
+}
+
+export interface SynthesisOutput {
+  phoneme: string;
+  pitch: number;
+  buffer: Float32Array;
 }

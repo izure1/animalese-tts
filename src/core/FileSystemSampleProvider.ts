@@ -1,12 +1,14 @@
 import type { SampleProvider } from '../interfaces'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { WavDecoder } from './WavDecoder'
 
 export class FileSystemSampleProvider implements SampleProvider {
   // 한 번 디스크에서 읽은 샘플을 다시 I/O 하지 않도록 메모리에 캐싱합니다.
   private cache: Map<string, Float32Array> = new Map()
+  private decoder: WavDecoder = new WavDecoder()
 
-  constructor(private samplesDirectory: string) { }
+  constructor(private samplesDirectory: string, private targetSampleRate: number = 44100) { }
 
   public getSample(phoneme: string): Float32Array | undefined {
     // 1. 메모리 캐시 1차 확인 (캐시 히트)
@@ -23,11 +25,12 @@ export class FileSystemSampleProvider implements SampleProvider {
         const fileBuffer = fs.readFileSync(filePath)
 
         // 16-bit PCM WAV 바이너리를 -> Float32Array 로 자체 디코딩
-        const floatArray = this.decodeWAV(fileBuffer)
+        const { buffer: floatArray, sampleRate } = this.decoder.decode(fileBuffer)
+        const finalArray = this.resample(floatArray, sampleRate, this.targetSampleRate)
 
         // 캐시에 적재 (Miss 후 히트 보장)
-        this.cache.set(phoneme, floatArray)
-        return floatArray
+        this.cache.set(phoneme, finalArray)
+        return finalArray
       }
     } catch (e) {
       console.warn(`[FileSystemSampleProvider] 샘플 로드 실패: ${phoneme}`, e)
@@ -55,8 +58,9 @@ export class FileSystemSampleProvider implements SampleProvider {
         const filePath = path.join(directoryPath, file)
         try {
           const fileBuffer = fs.readFileSync(filePath)
-          const floatArray = this.decodeWAV(fileBuffer)
-          this.cache.set(phoneme, floatArray)
+          const { buffer: floatArray, sampleRate } = this.decoder.decode(fileBuffer)
+          const finalArray = this.resample(floatArray, sampleRate, this.targetSampleRate)
+          this.cache.set(phoneme, finalArray)
         } catch (e) {
           console.warn(`[FileSystemSampleProvider] 파일 로드 실패: ${file}`, e)
         }
@@ -64,53 +68,22 @@ export class FileSystemSampleProvider implements SampleProvider {
     }
   }
 
-  // 외부 파서(ffmpeg 등) 없이 순수 타입스크립트로 16-bit PCM 파싱
-  private decodeWAV(buffer: Buffer): Float32Array {
-    let numChannels = 1
-    let dataOffset = 44
-    let dataSize = 0
+  private resample(buffer: Float32Array, sourceRate: number, targetRate: number): Float32Array {
+    if (sourceRate === targetRate) return buffer
 
-    // WAV 기본 구조 탐색 (RIFF 헤더 이후 12바이트부터 청크 시작)
-    let searchOffset = 12
-    while (searchOffset < buffer.length - 8) {
-      const chunkId = buffer.toString('ascii', searchOffset, searchOffset + 4)
-      const chunkSize = buffer.readUInt32LE(searchOffset + 4)
+    const targetLength = Math.floor(buffer.length * targetRate / sourceRate)
+    const resampled = new Float32Array(targetLength)
+    const ratio = sourceRate / targetRate
 
-      if (chunkId === 'fmt ') {
-        // fmt 청크의 2바이트 위치가 채널 수 (1=Mono, 2=Stereo)
-        numChannels = buffer.readUInt16LE(searchOffset + 10)
-      } else if (chunkId === 'data') {
-        dataOffset = searchOffset + 8
-        dataSize = chunkSize
-        break // 오디오 데이터 청크를 찾았으므로 탐색 종료
-      }
+    for (let i = 0; i < targetLength; i++) {
+      const srcIndex = i * ratio
+      const leftIndex = Math.floor(srcIndex)
+      const rightIndex = Math.min(leftIndex + 1, buffer.length - 1)
+      const fraction = srcIndex - leftIndex
 
-      searchOffset += 8 + chunkSize
+      resampled[i] = buffer[leftIndex] * (1 - fraction) + buffer[rightIndex] * fraction
     }
 
-    // 대비책: data 청크를 스펙대로 못 찾았을 경우 기본값 적용
-    if (dataSize === 0) {
-      dataOffset = 44
-      numChannels = buffer.readUInt16LE(22)
-      dataSize = buffer.length - 44
-    }
-
-    const numSamples = Math.floor(dataSize / (2 * numChannels))
-    const floatArray = new Float32Array(numSamples)
-
-    let offset = dataOffset
-    for (let i = 0, len = numSamples; i < len; i++) {
-      let sum = 0
-      for (let ch = 0; ch < numChannels; ch++) {
-        // 안전 장치: 버퍼 범위를 넘어가려 하면 중단
-        if (offset >= buffer.length - 1) break
-        const int16 = buffer.readInt16LE(offset)
-        sum += int16 < 0 ? int16 / 32768.0 : int16 / 32767.0
-        offset += 2
-      }
-      floatArray[i] = sum / numChannels
-    }
-
-    return floatArray
+    return resampled
   }
 }

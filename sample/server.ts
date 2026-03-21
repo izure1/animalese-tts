@@ -15,12 +15,8 @@ const app = express()
 app.use(cors())
 app.use(express.static(path.join(__dirname, 'public')))
 
-// FileSystem 버퍼 사전 적재
+// WAV 파일에서 실제 샘플레이트를 먼저 읽어옵니다
 const soundsDir = path.join(__dirname, 'sounds')
-const sampleProvider = new FileSystemSampleProvider(soundsDir)
-sampleProvider.loadDirectory()
-
-// WAV 파일에서 실제 샘플레이트를 읽어옵니다
 function detectSampleRate(dir: string): number {
   const files = fs.readdirSync(dir).filter(f => f.endsWith('.wav'))
   if (files.length === 0) return 44100
@@ -28,6 +24,10 @@ function detectSampleRate(dir: string): number {
   return buf.readUInt32LE(24)
 }
 const sampleRate = detectSampleRate(soundsDir)
+
+// FileSystem 버퍼 사전 적재 시 타겟 Hz를 동기화하여 주입합니다.
+const sampleProvider = new FileSystemSampleProvider(soundsDir, sampleRate)
+sampleProvider.loadDirectory()
 
 // Float32Array를 16-bit PCM (Little Endian) Buffer로 양자화하는 헬퍼 함수
 function float32ToInt16(float32Array: Float32Array): Buffer {
