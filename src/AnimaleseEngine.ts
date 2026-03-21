@@ -18,9 +18,13 @@ export class AnimaleseEngine {
 
   public async *synthesize(text: string, asInt16: boolean = false): AsyncGenerator<SynthesisOutput, void, unknown> {
     const tokenGroups = this.config.analyzer.analyze(text)
+    const chars = text.split('')
     let charIndex = 0
 
-    for (const tokens of tokenGroups) {
+    for (let i = 0; i < tokenGroups.length; i++) {
+      const tokens = tokenGroups[i]
+      const originalChar = chars[i] || ''
+
       let pendingBuffer: Float32Array | null = null
       let pendingPhoneme: string = ''
       let shouldMergeNext = false
@@ -41,6 +45,7 @@ export class AnimaleseEngine {
           if (delaySamples > 0) {
             const emptyBuffer = new Float32Array(delaySamples)
             yield {
+              char: originalChar,
               phoneme: ' ',
               pitch: 1.0,
               buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer
@@ -54,6 +59,7 @@ export class AnimaleseEngine {
           if (delaySamples > 0) {
             const emptyBuffer = new Float32Array(delaySamples)
             yield {
+              char: originalChar,
               phoneme: token.phoneme,
               pitch: 1.0,
               buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer
@@ -83,7 +89,7 @@ export class AnimaleseEngine {
             const pitch = this.calculatePitch(charIndex++)
             const processedBuffer = this.config.effect.apply(combined, pitch)
             const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
-            yield { phoneme: pendingPhoneme + token.phoneme, pitch, buffer: finalBuffer }
+            yield { char: originalChar, phoneme: pendingPhoneme + token.phoneme, pitch, buffer: finalBuffer }
             pendingBuffer = null
             pendingPhoneme = ''
             shouldMergeNext = false
@@ -93,7 +99,7 @@ export class AnimaleseEngine {
             const pitch = this.calculatePitch(charIndex++)
             const processedBuffer = this.config.effect.apply(pendingBuffer, pitch)
             const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
-            yield { phoneme: pendingPhoneme, pitch, buffer: finalBuffer }
+            yield { char: originalChar, phoneme: pendingPhoneme, pitch, buffer: finalBuffer }
           }
 
           if (token.mergeWithNext) {
@@ -104,7 +110,7 @@ export class AnimaleseEngine {
             const pitch = this.calculatePitch(charIndex++)
             const processedBuffer = this.config.effect.apply(rawBuffer, pitch)
             const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
-            yield { phoneme: token.phoneme, pitch, buffer: finalBuffer }
+            yield { char: originalChar, phoneme: token.phoneme, pitch, buffer: finalBuffer }
             pendingBuffer = null
             pendingPhoneme = ''
             shouldMergeNext = false
@@ -116,7 +122,7 @@ export class AnimaleseEngine {
         const pitch = this.calculatePitch(charIndex++)
         const processedBuffer = this.config.effect.apply(pendingBuffer, pitch)
         const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
-        yield { phoneme: pendingPhoneme, pitch, buffer: finalBuffer }
+        yield { char: originalChar, phoneme: pendingPhoneme, pitch, buffer: finalBuffer }
       }
     }
   }
@@ -129,8 +135,6 @@ export class AnimaleseEngine {
     const radianStep = stepDegrees * (Math.PI / 180)
 
     pitch += Math.sin(charIndex * radianStep) * amplitude
-
-    console.log(charIndex, pitch)
 
     return pitch + (Math.random() - 0.5) * this.config.randomness
   }

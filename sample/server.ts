@@ -54,7 +54,7 @@ app.get('/api/stream', async (req, res) => {
 
   // 브라우저가 조각(Chunk) 트래픽을 즉시 인식할 수 있도록 HTTP 200 청크드 스트림 개방
   res.writeHead(200, {
-    'Content-Type': 'application/octet-stream',
+    'Content-Type': 'application/x-ndjson',
     'Transfer-Encoding': 'chunked',
     'Access-Control-Allow-Origin': '*',
     'X-Sample-Rate': String(sampleRate)
@@ -62,7 +62,12 @@ app.get('/api/stream', async (req, res) => {
 
   // 엔진 이터레이터가 산출하는 오디오 조각을 하나씩 변환 후 실시간 전송 (Streaming)
   for await (const result of engine.synthesize(text, true)) {
-    res.write(result.buffer as Int16Array)
+    const audioBuffer = Buffer.from(result.buffer.buffer, result.buffer.byteOffset, result.buffer.byteLength)
+    const payload = {
+      char: result.char,
+      audioBase64: audioBuffer.toString('base64')
+    }
+    res.write(JSON.stringify(payload) + '\n')
   }
 
   // 스트림 완료 (커넥션 종료)

@@ -21,6 +21,7 @@ export interface PlaybackStrategy {
 }
 
 export interface SynthesisOutput {
+  char: string;
   phoneme: string;
   pitch: number;
   buffer: Float32Array | Int16Array;

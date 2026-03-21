@@ -105,6 +105,9 @@
     <input type="text" id="punctuations" value=".,!?'&quot;()~。、！？" />
 
     <button id="playBtn">▶️ 스트리밍 재생 시작</button>
+    <div id="typedTextContainer"
+      style="font-size: 1rem; font-weight: bold; color: #ebcb8b; margin-top: 1rem; min-height: 3rem; word-break: break-all;">
+    </div>
     <div id="log">안내: 버튼을 누르면 서버와 스트리밍 파이프라인이 열립니다.</div>
   </div>
 
@@ -145,40 +148,80 @@
         // 서버가 전달한 실제 WAV 샘플레이트 (기본값 22050)
         const sampleRate = parseInt(response.headers.get('X-Sample-Rate'), 10);
 
-        log(`[Client] 실시간 스트리밍 수신 및 재생 개시...`);
-        let nextStartTime = audioContext.currentTime + 0.1; // 100ms 버퍼링 마진 시작
+        const decoder = new TextDecoder();
+        let bufferStr = '';
+
+        let totalSampleCount = 0;
+        const timeline = []; // { char: string, sampleOffset: number }
+        const float32Chunks = [];
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const sampleCount = Math.floor(value.byteLength / 2);
-          if (sampleCount === 0) continue;
+          bufferStr += decoder.decode(value, { stream: true });
+          let newlineIndex;
+          while ((newlineIndex = bufferStr.indexOf('\n')) !== -1) {
+            const line = bufferStr.slice(0, newlineIndex);
+            bufferStr = bufferStr.slice(newlineIndex + 1);
+            if (!line.trim()) continue;
 
-          const dataView = new DataView(value.buffer, value.byteOffset, value.byteLength);
-          const float32Array = new Float32Array(sampleCount);
-          for (let i = 0; i < sampleCount; i++) {
-            const int16 = dataView.getInt16(i * 2, true);
-            float32Array[i] = int16 / (int16 < 0 ? 32768.0 : 32767.0);
+            const payload = JSON.parse(line);
+            const binaryString = atob(payload.audioBase64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+
+            const sampleCount = len / 2;
+            const dataView = new DataView(bytes.buffer);
+            const float32Array = new Float32Array(sampleCount);
+            for (let i = 0; i < sampleCount; i++) {
+              const int16 = dataView.getInt16(i * 2, true);
+              float32Array[i] = int16 / (int16 < 0 ? 32768.0 : 32767.0);
+            }
+
+            float32Chunks.push(float32Array);
+            if (payload.char) {
+              timeline.push({
+                char: payload.char,
+                sampleOffset: totalSampleCount
+              });
+            }
+            totalSampleCount += sampleCount;
           }
-
-          const audioBuffer = audioContext.createBuffer(1, float32Array.length, sampleRate);
-          audioBuffer.copyToChannel(float32Array, 0);
-
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
-          source.connect(audioContext.destination);
-
-          // 만약 스트리밍 지연으로 버퍼 언더런이 발생해 nextStartTime이 현재 시간보다 과거가 되었다면 리프레시
-          if (nextStartTime < audioContext.currentTime) {
-            nextStartTime = audioContext.currentTime + 0.05;
-          }
-
-          source.start(nextStartTime);
-          nextStartTime += audioBuffer.duration;
         }
 
-        log(`[Client] 스트리밍 끝 (모든 청크 스케줄링 완료)`);
+        // 누적된 청크를 하나의 연속 버퍼로 병합합니다
+        const mergedFloat32 = new Float32Array(totalSampleCount);
+        let offset = 0;
+        for (const chunk of float32Chunks) {
+          mergedFloat32.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        // AudioBuffer를 올바른 샘플레이트로 생성하여 재생합니다
+        const audioBuffer = audioContext.createBuffer(1, mergedFloat32.length, sampleRate);
+        audioBuffer.copyToChannel(mergedFloat32, 0);
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+
+        // 타이핑 효과 UI 업데이트
+        const typedTextEl = document.getElementById('typedTextContainer');
+        typedTextEl.textContent = '';
+
+        timeline.forEach(item => {
+          const timeInSeconds = item.sampleOffset / sampleRate;
+          setTimeout(() => {
+            typedTextEl.textContent += item.char;
+          }, timeInSeconds * 1000);
+        });
+
+        log(`[Client] 수신 완료! 샘플레이트: ${sampleRate}Hz, 샘플 수: ${totalSampleCount}`);
       } catch (err) {
         log(`[Error] 스트리밍 실패: ${err.message}`);
       } finally {
