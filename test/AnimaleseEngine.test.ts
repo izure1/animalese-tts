@@ -84,11 +84,11 @@ describe('AnimaleseEngine (EnglishAnalyzer)', () => {
     await sampleProvider.loadSample('l', buffer, 44100)
     await sampleProvider.loadSample('o', buffer, 44100)
 
-    // 'Hello!!' -> 특수문자 무시, 대문자 소문자화 -> 'h', 'e', 'l', 'l', 'o' (총 5개)
+    // 'Hello!!' -> 특수문자 무시, 대문자 소문자화 -> 'h', 'e', 'l', 'l', 'o' (총 5개) 그리고 뒤의 미지원 문자열 '!!' 1개 추가 출력
     for await (const result of engine.synthesize('Hello!!')) {
       await mockStrategy.play(result.buffer as Float32Array)
     }
 
-    expect(mockStrategy.play).toHaveBeenCalledTimes(5)
+    expect(mockStrategy.play).toHaveBeenCalledTimes(6)
   })
 })

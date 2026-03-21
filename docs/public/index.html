@@ -89,11 +89,17 @@
     <label>Pitch 배율 (기본 1.5배)</label>
     <input type="number" id="pitch" value="1.5" step="0.1" min="0.5" max="3.0" />
 
-    <label>Speed 배율 (기본 3.0배)</label>
-    <input type="number" id="speed" value="3.0" step="0.1" min="0.5" max="5.0" />
+    <label>Speed 배율 (기본 5.0배)</label>
+    <input type="number" id="speed" value="5.0" step="0.1" min="0.5" max="5.0" />
 
     <label>Randomness (피치 변동폭, 기본 0.1)</label>
     <input type="number" id="randomness" value="0.1" step="0.1" min="0" max="1.0" />
+
+    <label>Melody Rate (음률 속도, 기본 0.05)</label>
+    <input type="number" id="melodyRate" value="0.05" step="0.01" min="0" max="1.0" />
+
+    <label>Melody Amplitude (음률 진폭, 기본 0.1)</label>
+    <input type="number" id="melodyAmplitude" value="0.1" step="0.01" min="0" max="1.0" />
 
     <label>띄어쓰기 대기 시간 (초, 기본 0.03)</label>
     <input type="number" id="spaceDelay" value="0.03" step="0.01" min="0" max="5.0" />
@@ -132,16 +138,18 @@
       const speed = document.getElementById('speed').value;
       const lang = document.getElementById('lang').value;
       const randomness = document.getElementById('randomness').value;
+      const melodyRate = document.getElementById('melodyRate').value;
+      const melodyAmplitude = document.getElementById('melodyAmplitude').value;
       const spaceDelay = document.getElementById('spaceDelay').value;
       const punctuationDelay = document.getElementById('punctuationDelay').value;
       const punctuations = document.getElementById('punctuations').value;
 
-      log(`[Client] 서버에 '${text}' (Pitch: ${pitch}, Speed: ${speed}, Space: ${spaceDelay}s, Punct: ${punctuationDelay}s) 스트리밍 요청 개시...`);
+      log(`[Client] 서버에 '${text}' (Pitch: ${pitch}, Speed: ${speed}, MelodyRate: ${melodyRate}, MelodyAmp: ${melodyAmplitude}) 스트리밍 요청 개시...`);
       playBtn.disabled = true;
 
       try {
         // Fetch API를 활용하여 스트리밍 연결 수립
-        const urlArgs = `text=${encodeURIComponent(text)}&pitch=${pitch}&speed=${speed}&lang=${lang}&randomness=${randomness}&spaceDelay=${spaceDelay}&punctuationDelay=${punctuationDelay}&punctuations=${encodeURIComponent(punctuations)}`;
+        const urlArgs = `text=${encodeURIComponent(text)}&pitch=${pitch}&speed=${speed}&lang=${lang}&randomness=${randomness}&melodyRate=${melodyRate}&melodyAmplitude=${melodyAmplitude}&spaceDelay=${spaceDelay}&punctuationDelay=${punctuationDelay}&punctuations=${encodeURIComponent(punctuations)}`;
         const response = await fetch(`/api/stream?${urlArgs}`);
         const reader = response.body.getReader();
 

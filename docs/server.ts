@@ -27,6 +27,8 @@ app.get('/api/stream', async (req, res) => {
   const speed = parseFloat(req.query.speed as string) || 3.0
   const lang = (req.query.lang as string) || 'ko'
   const randomness = req.query.randomness !== undefined ? parseFloat(req.query.randomness as string) : 0.01
+  const melodyRate = req.query.melodyRate !== undefined ? parseFloat(req.query.melodyRate as string) : 0.05
+  const melodyAmplitude = req.query.melodyAmplitude !== undefined ? parseFloat(req.query.melodyAmplitude as string) : 0.1
   const spaceDelay = req.query.spaceDelay !== undefined ? parseFloat(req.query.spaceDelay as string) : 0.1
   const punctuationDelay = req.query.punctuationDelay !== undefined ? parseFloat(req.query.punctuationDelay as string) : 0.3
   const punctuationsParam = req.query.punctuations as string
@@ -45,6 +47,8 @@ app.get('/api/stream', async (req, res) => {
     sampleProvider,
     effect: new GranularPitchShifter(speed), // 피치 시프터 및 재생속도 적용
     sampleRate,
+    melodyRate,
+    melodyAmplitude,
     spaceDelay,
     punctuationDelay,
     punctuations

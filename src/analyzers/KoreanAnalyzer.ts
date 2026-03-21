@@ -31,9 +31,9 @@ export class KoreanAnalyzer implements TextAnalyzer {
 
     if (this.JONGSEONG[jongIndex] !== '') {
       result.push({ phoneme: this.JUNGSEONG[jungIndex], mergeWithNext: true })
-      result.push({ phoneme: this.JONGSEONG[jongIndex], mergeWithNext: true })
+      result.push({ phoneme: this.JONGSEONG[jongIndex], mergeWithNext: false })
     } else {
-      result.push({ phoneme: this.JUNGSEONG[jungIndex], mergeWithNext: true })
+      result.push({ phoneme: this.JUNGSEONG[jungIndex], mergeWithNext: false })
     }
 
     return result
