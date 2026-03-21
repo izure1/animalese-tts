@@ -17,19 +17,6 @@ export class AnimaleseEngine {
   constructor(private config: AnimalVoiceConfig) { }
 
   public async *synthesize(text: string, asInt16: boolean = false): AsyncGenerator<SynthesisOutput, void, unknown> {
-    let delayMs = 0
-    const sampleRate = this.config.sampleRate
-
-    for await (const output of this.generateRawOutputs(text, asInt16)) {
-      if (delayMs > 0) {
-        await new Promise(resolve => setTimeout(resolve, delayMs))
-      }
-      delayMs = (output.buffer.length / sampleRate) * 1000
-      yield output
-    }
-  }
-
-  private async *generateRawOutputs(text: string, asInt16: boolean): AsyncGenerator<SynthesisOutput, void, unknown> {
     const tokenGroups = this.config.analyzer.analyze(text)
 
     for (const tokens of tokenGroups) {
