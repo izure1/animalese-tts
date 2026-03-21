@@ -18,6 +18,7 @@ export class AnimaleseEngine {
 
   public async *synthesize(text: string, asInt16: boolean = false): AsyncGenerator<SynthesisOutput, void, unknown> {
     const tokenGroups = this.config.analyzer.analyze(text)
+    let charIndex = 0
 
     for (const tokens of tokenGroups) {
       let pendingBuffer: Float32Array | null = null
@@ -30,6 +31,10 @@ export class AnimaleseEngine {
         const isSpace = token.phoneme === ' ' || token.phoneme === '　'
         const punctuations = this.config.punctuations || ['.', ',', '!', '?', "'", '"', '(', ')', '~', '。', '、', '！', '？']
         const isPunctuation = punctuations.includes(token.phoneme)
+
+        if (isPunctuation) {
+          charIndex = 0
+        }
 
         if (isSpace && this.config.spaceDelay) {
           const delaySamples = Math.floor(this.config.spaceDelay * this.config.sampleRate)
@@ -75,7 +80,7 @@ export class AnimaleseEngine {
             pendingPhoneme = pendingPhoneme + token.phoneme
             shouldMergeNext = true
           } else {
-            const pitch = this.calculateRandomizedPitch()
+            const pitch = this.calculatePitch(charIndex++)
             const processedBuffer = this.config.effect.apply(combined, pitch)
             const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
             yield { phoneme: pendingPhoneme + token.phoneme, pitch, buffer: finalBuffer }
@@ -85,7 +90,7 @@ export class AnimaleseEngine {
           }
         } else {
           if (pendingBuffer) {
-            const pitch = this.calculateRandomizedPitch()
+            const pitch = this.calculatePitch(charIndex++)
             const processedBuffer = this.config.effect.apply(pendingBuffer, pitch)
             const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
             yield { phoneme: pendingPhoneme, pitch, buffer: finalBuffer }
@@ -96,7 +101,7 @@ export class AnimaleseEngine {
             pendingPhoneme = token.phoneme
             shouldMergeNext = true
           } else {
-            const pitch = this.calculateRandomizedPitch()
+            const pitch = this.calculatePitch(charIndex++)
             const processedBuffer = this.config.effect.apply(rawBuffer, pitch)
             const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
             yield { phoneme: token.phoneme, pitch, buffer: finalBuffer }
@@ -108,7 +113,7 @@ export class AnimaleseEngine {
       }
 
       if (pendingBuffer) {
-        const pitch = this.calculateRandomizedPitch()
+        const pitch = this.calculatePitch(charIndex++)
         const processedBuffer = this.config.effect.apply(pendingBuffer, pitch)
         const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
         yield { phoneme: pendingPhoneme, pitch, buffer: finalBuffer }
@@ -116,7 +121,17 @@ export class AnimaleseEngine {
     }
   }
 
-  public calculateRandomizedPitch(): number {
-    return this.config.basePitch + (Math.random() - 0.5) * this.config.randomness
+  public calculatePitch(charIndex: number): number {
+    let pitch = this.config.basePitch
+
+    const amplitude = 0.1 // 기본 진폭
+    const stepDegrees = 15 // 기본값: 글자당 30도 회전
+    const radianStep = stepDegrees * (Math.PI / 180)
+
+    pitch += Math.sin(charIndex * radianStep) * amplitude
+
+    console.log(charIndex, pitch)
+
+    return pitch + (Math.random() - 0.5) * this.config.randomness
   }
 }

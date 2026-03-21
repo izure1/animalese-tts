@@ -43,8 +43,8 @@ describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
     expect(mockStrategy.play).toHaveBeenCalledTimes(2)
   })
 
-  it('calculateRandomizedPitch: 피치는 randomness 기본 범위 내에서 랜덤하게 생성되어야 한다', () => {
-    const pitch = engine.calculateRandomizedPitch()
+  it('calculatePitch: 피치는 randomness 기본 범위 내에서 랜덤하게 생성되어야 한다', () => {
+    const pitch = engine.calculatePitch(0)
     expect(pitch).toBeGreaterThanOrEqual(1.5 - 0.1 / 2)
     expect(pitch).toBeLessThanOrEqual(1.5 + 0.1 / 2)
   })
