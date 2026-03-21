@@ -14,11 +14,12 @@ describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
       play: jest.fn().mockResolvedValue(undefined)
     }
 
-    sampleProvider = new MemorySampleProvider()
+    sampleProvider = new MemorySampleProvider(44100)
 
     const config: AnimalVoiceConfig = {
       basePitch: 1.5,
       randomness: 0.1,
+      sampleRate: 44100,
       analyzer: new KoreanAnalyzer(),
       sampleProvider: sampleProvider,
       effect: new GranularPitchShifter()
@@ -30,13 +31,13 @@ describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
   it('텍스트 변환, 피치 연산 및 모의 전략 재생 호출이 연계되어야 한다.', async () => {
     // mock Float32Array 샘플 로드
     const buffer = new Float32Array(8)
-    sampleProvider.loadSample('ㅏ', buffer)
-    sampleProvider.loadSample('ㄴ', buffer)
-    sampleProvider.loadSample('ㅕ', buffer)
+    await sampleProvider.loadSample('ㅏ', buffer, 44100)
+    await sampleProvider.loadSample('ㄴ', buffer, 44100)
+    await sampleProvider.loadSample('ㅕ', buffer, 44100)
 
     // '안녕' -> 'ㅏ', 'ㄴ', 'ㄴ', 'ㅕ', 'ㅇ'(생략) -> '안', '녕' 각각 병합되어 총 2번의 오디오 재생이 유효함
     for await (const result of engine.synthesize('안녕')) {
-      await mockStrategy.play(result.buffer)
+      await mockStrategy.play(result.buffer as Float32Array)
     }
 
     expect(mockStrategy.play).toHaveBeenCalledTimes(2)
@@ -61,11 +62,12 @@ describe('AnimaleseEngine (EnglishAnalyzer)', () => {
       play: jest.fn().mockResolvedValue(undefined)
     }
 
-    sampleProvider = new MemorySampleProvider()
+    sampleProvider = new MemorySampleProvider(44100)
 
     const config: AnimalVoiceConfig = {
       basePitch: 1.5,
       randomness: 0.1,
+      sampleRate: 44100,
       analyzer: new EnglishAnalyzer(), // 영문 분석기 주입
       sampleProvider: sampleProvider,
       effect: new GranularPitchShifter()
@@ -77,14 +79,14 @@ describe('AnimaleseEngine (EnglishAnalyzer)', () => {
   it('영문 텍스트는 대소문자 구분 없이 알파벳만 분리되어 재생되어야 한다.', async () => {
     // mock Float32Array 샘플 로드
     const buffer = new Float32Array(8)
-    sampleProvider.loadSample('h', buffer)
-    sampleProvider.loadSample('e', buffer)
-    sampleProvider.loadSample('l', buffer)
-    sampleProvider.loadSample('o', buffer)
+    await sampleProvider.loadSample('h', buffer, 44100)
+    await sampleProvider.loadSample('e', buffer, 44100)
+    await sampleProvider.loadSample('l', buffer, 44100)
+    await sampleProvider.loadSample('o', buffer, 44100)
 
     // 'Hello!!' -> 특수문자 무시, 대문자 소문자화 -> 'h', 'e', 'l', 'l', 'o' (총 5개)
     for await (const result of engine.synthesize('Hello!!')) {
-      await mockStrategy.play(result.buffer)
+      await mockStrategy.play(result.buffer as Float32Array)
     }
 
     expect(mockStrategy.play).toHaveBeenCalledTimes(5)

@@ -1,7 +1,6 @@
 import express from 'express'
 import cors from 'cors'
 import path from 'node:path'
-import fs from 'node:fs'
 import {
   AnimaleseEngine,
   KoreanAnalyzer,
@@ -17,27 +16,10 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 // WAV 파일에서 실제 샘플레이트를 먼저 읽어옵니다
 const soundsDir = path.join(__dirname, 'sounds')
-function detectSampleRate(dir: string): number {
-  const files = fs.readdirSync(dir).filter(f => f.endsWith('.wav'))
-  if (files.length === 0) return 44100
-  const buf = fs.readFileSync(path.join(dir, files[0]))
-  return buf.readUInt32LE(24)
-}
-const sampleRate = detectSampleRate(soundsDir)
 
-// FileSystem 버퍼 사전 적재 시 타겟 Hz를 동기화하여 주입합니다.
-const sampleProvider = new FileSystemSampleProvider(soundsDir, sampleRate)
-sampleProvider.loadDirectory()
-
-// Float32Array를 16-bit PCM (Little Endian) Buffer로 양자화하는 헬퍼 함수
-function float32ToInt16(float32Array: Float32Array): Buffer {
-  const buffer = Buffer.alloc(float32Array.length * 2)
-  for (let i = 0; i < float32Array.length; i++) {
-    const s = Math.max(-1, Math.min(1, float32Array[i]))
-    buffer.writeInt16LE(s < 0 ? s * 0x8000 : s * 0x7FFF, i * 2)
-  }
-  return buffer
-}
+// FileSystem 버퍼 사전 적재 시 타겟 Hz를 내부에서 자동 감지하지 않고 외부에서 입력받습니다
+const sampleRate = 44100
+const sampleProvider = new FileSystemSampleProvider(sampleRate, soundsDir)
 
 app.get('/api/stream', async (req, res) => {
   const text = (req.query.text as string) || '안녕하세요'
@@ -79,9 +61,8 @@ app.get('/api/stream', async (req, res) => {
   })
 
   // 엔진 이터레이터가 산출하는 오디오 조각을 하나씩 변환 후 실시간 전송 (Streaming)
-  for await (const result of engine.synthesize(text)) {
-    const pcmChunk = float32ToInt16(result.buffer)
-    res.write(pcmChunk)
+  for await (const result of engine.synthesize(text, true)) {
+    res.write(result.buffer as Int16Array)
   }
 
   // 스트림 완료 (커넥션 종료)
@@ -89,8 +70,12 @@ app.get('/api/stream', async (req, res) => {
 })
 
 const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`🚀 Animalese [Express] Streaming Server is running!`)
-  console.log(`📡 URL: http://localhost:${PORT}`)
-  console.log(`📄 접속 시 제공되는 GUI(공용폴더)에서 테스트를 진행하세요.`)
+sampleProvider.loadDirectory().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Animalese [Express] Streaming Server is running!`)
+    console.log(`📡 URL: http://localhost:${PORT}`)
+    console.log(`📄 접속 시 제공되는 GUI(공용폴더)에서 테스트를 진행하세요.`)
+  })
+}).catch(err => {
+  console.error('Failed to preload sounds', err)
 })

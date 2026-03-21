@@ -143,9 +143,9 @@
         const reader = response.body.getReader();
 
         // 서버가 전달한 실제 WAV 샘플레이트 (기본값 22050)
-        const sampleRate = parseInt(response.headers.get('X-Sample-Rate') || '22050', 10);
+        const sampleRate = parseInt(response.headers.get('X-Sample-Rate'), 10);
 
-        // 모든 청크를 누적합니다 (청크 경계 미정렬으로 인한 크래클 방지)
+        // 모든 청크를 누적합니다 (청크 경계 미정렬로 인한 크래클 방지)
         const chunks = [];
         let totalLength = 0;
 

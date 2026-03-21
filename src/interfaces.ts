@@ -8,8 +8,8 @@ export interface TextAnalyzer {
 }
 
 export interface SampleProvider {
-  getSample(phoneme: string): Float32Array | undefined
-  loadSample(phoneme: string, buffer: Float32Array): void
+  getSample(phoneme: string): Promise<Float32Array | undefined>
+  loadSample(phoneme: string, buffer: Float32Array, sampleRate: number): Promise<void>
 }
 
 export interface AudioEffect {
@@ -23,5 +23,5 @@ export interface PlaybackStrategy {
 export interface SynthesisOutput {
   phoneme: string;
   pitch: number;
-  buffer: Float32Array;
+  buffer: Float32Array | Int16Array;
 }
