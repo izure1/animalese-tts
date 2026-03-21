@@ -92,6 +92,9 @@
     <label>Speed 배율 (기본 1.0배)</label>
     <input type="number" id="speed" value="1.0" step="0.1" min="0.5" max="5.0" />
 
+    <label>Randomness (피치 변동폭, 기본 0.01)</label>
+    <input type="number" id="randomness" value="0.01" step="0.01" min="0" max="1.0" />
+
     <button id="playBtn">▶️ 스트리밍 재생 시작</button>
     <div id="log">안내: 버튼을 누르면 서버와 스트리밍 파이프라인이 열립니다.</div>
   </div>
@@ -116,13 +119,14 @@
       const pitch = document.getElementById('pitch').value;
       const speed = document.getElementById('speed').value;
       const lang = document.getElementById('lang').value;
+      const randomness = document.getElementById('randomness').value;
 
-      log(`[Client] 서버에 '${text}' (Pitch: ${pitch}, Speed: ${speed}) 스트리밍 요청 개시...`);
+      log(`[Client] 서버에 '${text}' (Pitch: ${pitch}, Speed: ${speed}, Randomness: ${randomness}) 스트리밍 요청 개시...`);
       playBtn.disabled = true;
 
       try {
         // Fetch API를 활용하여 스트리밍 연결 수립
-        const response = await fetch(`/api/stream?text=${encodeURIComponent(text)}&pitch=${pitch}&speed=${speed}&lang=${lang}`);
+        const response = await fetch(`/api/stream?text=${encodeURIComponent(text)}&pitch=${pitch}&speed=${speed}&lang=${lang}&randomness=${randomness}`);
         const reader = response.body.getReader();
 
         // 서버가 전달한 실제 WAV 샘플레이트 (기본값 22050)

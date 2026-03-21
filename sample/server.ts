@@ -44,6 +44,7 @@ app.get('/api/stream', async (req, res) => {
   const pitch = parseFloat(req.query.pitch as string) || 1.5
   const speed = parseFloat(req.query.speed as string) || 3.0
   const lang = (req.query.lang as string) || 'ko'
+  const randomness = req.query.randomness !== undefined ? parseFloat(req.query.randomness as string) : 0.01
 
   // 클라이언트가 요청한 언어 분석기 매핑
   let analyzer
@@ -53,7 +54,7 @@ app.get('/api/stream', async (req, res) => {
 
   const config = {
     basePitch: pitch,
-    randomness: 0.1,
+    randomness,
     analyzer,
     sampleProvider,
     effect: new GranularPitchShifter(speed) // 피치 시프터 및 재생속도 적용

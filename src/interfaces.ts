@@ -4,7 +4,7 @@ export interface PhonemeToken {
 }
 
 export interface TextAnalyzer {
-  analyze(text: string): PhonemeToken[]
+  analyze(text: string): PhonemeToken[][]
 }
 
 export interface SampleProvider {

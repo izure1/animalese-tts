@@ -5,10 +5,10 @@ export class KoreanAnalyzer implements TextAnalyzer {
   private readonly JUNGSEONG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ']
   private readonly JONGSEONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
 
-  public analyze(text: string): PhonemeToken[] {
-    const tokens: PhonemeToken[] = []
+  public analyze(text: string): PhonemeToken[][] {
+    const tokens: PhonemeToken[][] = []
     for (const char of text.split('')) {
-      tokens.push(...this.decompose(char))
+      tokens.push(this.decompose(char))
     }
     return tokens
   }
@@ -30,10 +30,10 @@ export class KoreanAnalyzer implements TextAnalyzer {
     }
 
     if (this.JONGSEONG[jongIndex] !== '') {
-      result.push({ phoneme: this.JUNGSEONG[jungIndex], mergeWithNext: false })
-      result.push({ phoneme: this.JONGSEONG[jongIndex], mergeWithNext: false })
+      result.push({ phoneme: this.JUNGSEONG[jungIndex], mergeWithNext: true })
+      result.push({ phoneme: this.JONGSEONG[jongIndex], mergeWithNext: true })
     } else {
-      result.push({ phoneme: this.JUNGSEONG[jungIndex], mergeWithNext: false })
+      result.push({ phoneme: this.JUNGSEONG[jungIndex], mergeWithNext: true })
     }
 
     return result
