@@ -1,6 +1,20 @@
+/**
+ * A lightweight 16-bit PCM WAV decoder implemented in pure TypeScript.
+ * Parses audio buffers without relying on external ffmpeg libraries.
+ */
 export class WavDecoder {
-  // 외부 파서(ffmpeg 등) 없이 순수 타입스크립트로 16-bit PCM 파싱
-  public decode(buffer: Buffer): { buffer: Float32Array, sampleRate: number } {
+  /**
+   * Decodes a WAV buffer into a Float32Array and retrieves its sample rate.
+   * @param buffer The input array buffer containing WAV data.
+   * @returns An object containing the decoded Float32Array and sample rate.
+   */
+  public decode(buffer: ArrayBuffer | Uint8Array): { buffer: Float32Array, sampleRate: number } {
+    let arrayBuffer = buffer instanceof Uint8Array ? buffer.buffer : buffer
+    let byteOffset = buffer instanceof Uint8Array ? buffer.byteOffset : 0
+    let byteLength = buffer.byteLength
+    const dataView = new DataView(arrayBuffer, byteOffset, byteLength)
+    const uint8Array = new Uint8Array(arrayBuffer, byteOffset, byteLength)
+
     let numChannels = 1
     let sampleRate = 44100
     let dataOffset = 44
@@ -8,14 +22,15 @@ export class WavDecoder {
 
     // WAV 기본 구조 탐색 (RIFF 헤더 이후 12바이트부터 청크 시작)
     let searchOffset = 12
-    while (searchOffset < buffer.length - 8) {
-      const chunkId = buffer.toString('ascii', searchOffset, searchOffset + 4)
-      const chunkSize = buffer.readUInt32LE(searchOffset + 4)
+    while (searchOffset < byteLength - 8) {
+      let chunkId = ''
+      for (let i = 0; i < 4; i++) chunkId += String.fromCharCode(uint8Array[searchOffset + i])
+      const chunkSize = dataView.getUint32(searchOffset + 4, true)
 
       if (chunkId === 'fmt ') {
         // fmt 청크의 2바이트 위치가 채널 수 (1=Mono, 2=Stereo)
-        numChannels = buffer.readUInt16LE(searchOffset + 10)
-        sampleRate = buffer.readUInt32LE(searchOffset + 12)
+        numChannels = dataView.getUint16(searchOffset + 10, true)
+        sampleRate = dataView.getUint32(searchOffset + 12, true)
       } else if (chunkId === 'data') {
         dataOffset = searchOffset + 8
         dataSize = chunkSize
@@ -28,9 +43,9 @@ export class WavDecoder {
     // 대비책: data 청크를 스펙대로 못 찾았을 경우 기본값 적용
     if (dataSize === 0) {
       dataOffset = 44
-      numChannels = buffer.readUInt16LE(22)
-      sampleRate = buffer.readUInt32LE(24)
-      dataSize = buffer.length - 44
+      numChannels = dataView.getUint16(22, true)
+      sampleRate = dataView.getUint32(24, true)
+      dataSize = byteLength - 44
     }
 
     const numSamples = Math.floor(dataSize / (2 * numChannels))
@@ -41,8 +56,8 @@ export class WavDecoder {
       let sum = 0
       for (let ch = 0; ch < numChannels; ch++) {
         // 안전 장치: 버퍼 범위를 넘어가려 하면 중단
-        if (offset >= buffer.length - 1) break
-        const int16 = buffer.readInt16LE(offset)
+        if (offset >= byteLength - 1) break
+        const int16 = dataView.getInt16(offset, true)
         sum += int16 < 0 ? int16 / 32768.0 : int16 / 32767.0
         offset += 2
       }
@@ -55,7 +70,12 @@ export class WavDecoder {
     }
   }
 
-  // 앞뒤 무음 구간(Noise Threshold 이하)을 잘라내어 오디오 길이 및 지연을 최적화합니다.
+  /**
+   * Trims trailing silence from the ends of the audio buffer to optimize playback delay.
+   * @param buffer The audio buffer to trim.
+   * @param threshold The noise threshold below which samples are considered silent.
+   * @returns The trimmed Float32Array.
+   */
   private trimSilence(buffer: Float32Array, threshold: number = 0.02): Float32Array {
     let start = 0
     while (start < buffer.length && Math.abs(buffer[start]) <= threshold) {

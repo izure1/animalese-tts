@@ -1,7 +1,7 @@
 import { AnimaleseEngine, AnimalVoiceConfig } from '../src/AnimaleseEngine'
 import { KoreanAnalyzer } from '../src/analyzers/KoreanAnalyzer'
 import { MemorySampleProvider } from '../src/core/MemorySampleProvider'
-import { GranularPitchShifter } from '../src/effects/GranularPitchShifter'
+import { PitchManager } from '../src/effects/PitchManager'
 import { PlaybackStrategy } from '../src/interfaces'
 
 describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
@@ -17,12 +17,10 @@ describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
     sampleProvider = new MemorySampleProvider(44100)
 
     const config: AnimalVoiceConfig = {
-      basePitch: 1.5,
-      randomness: 0.1,
       sampleRate: 44100,
       analyzer: new KoreanAnalyzer(),
       sampleProvider: sampleProvider,
-      effect: new GranularPitchShifter()
+      effect: new PitchManager(1.5, 1.0, 0.1)
     }
 
     engine = new AnimaleseEngine(config)
@@ -65,12 +63,10 @@ describe('AnimaleseEngine (EnglishAnalyzer)', () => {
     sampleProvider = new MemorySampleProvider(44100)
 
     const config: AnimalVoiceConfig = {
-      basePitch: 1.5,
-      randomness: 0.1,
       sampleRate: 44100,
       analyzer: new EnglishAnalyzer(), // 영문 분석기 주입
       sampleProvider: sampleProvider,
-      effect: new GranularPitchShifter()
+      effect: new PitchManager(1.5, 1.0, 0.1)
     }
 
     engine = new AnimaleseEngine(config)

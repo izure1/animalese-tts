@@ -1,5 +1,9 @@
 import type { TextAnalyzer, PhonemeToken } from '../interfaces'
 
+/**
+ * Text analyzer implementation for the English language.
+ * Extracts individual alphabetical characters as phonemes.
+ */
 export class EnglishAnalyzer implements TextAnalyzer {
   public analyze(text: string): PhonemeToken[][] {
     const phonemes: PhonemeToken[][] = []

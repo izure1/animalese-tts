@@ -2,9 +2,17 @@ import type { PlaybackStrategy } from '../interfaces'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
+/**
+ * Playback strategy for Node.js environments.
+ * Encodes the audio buffer into a WAV file and saves it to the disk.
+ */
 export class NodePlaybackStrategy implements PlaybackStrategy {
   private outputIndex = 0
 
+  /**
+   * Encodes and writes the provided audio buffer to a local .wav file.
+   * @param bufferData The audio data to save.
+   */
   public async play(bufferData: Float32Array): Promise<void> {
     const sampleRate = 44100
     const wavBuffer = this.encodeWAV(bufferData, sampleRate)

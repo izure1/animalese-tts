@@ -1,3 +1,6 @@
+/**
+ * Utility class for converting between different audio buffer formats.
+ */
 export class AudioConverter {
   /**
    * 32-bit 부동소수점 오디오 배열을 16-bit PCM 정수형 배열로 변환합니다.

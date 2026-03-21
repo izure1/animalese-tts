@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Animalese Streaming Client (Static)</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #222;
+      color: #eee;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #333;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      color: #88c0d0;
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: none;
+      border-radius: 4px;
+      background: #444;
+      color: white;
+    }
+
+    button {
+      width: 100%;
+      background: #a3be8c;
+      color: #222;
+      border: none;
+      padding: 1rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #8fbcbb;
+    }
+
+    #log {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #111;
+      font-family: monospace;
+      border-radius: 4px;
+      height: 100px;
+      overflow-y: auto;
+      color: #a3be8c;
+    }
+  </style>
+  <script type="module">
+    import {
+      AnimaleseEngine,
+      KoreanAnalyzer,
+      EnglishAnalyzer,
+      JapaneseAnalyzer,
+      WebSampleProvider,
+      PitchManager
+    } from './animalese.browser.mjs';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const playBtn = document.getElementById('playBtn');
+      const logEl = document.getElementById('log');
+
+      let audioContext;
+      const sampleRate = 44100;
+      const baseUrl = './sounds';
+
+      // WebSampleProvider preload using a known list or let it block dynamically
+      // For this demo, WebSampleProvider will fetch dynamically on-the-fly.
+
+      function log(msg) {
+        logEl.innerHTML += `<div>${msg}</div>`;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      playBtn.addEventListener('click', async () => {
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
+        if (audioContext.state === 'suspended') await audioContext.resume();
+
+        const text = document.getElementById('text').value;
+        const pitch = parseFloat(document.getElementById('pitch').value);
+        const speed = parseFloat(document.getElementById('speed').value);
+        const lang = document.getElementById('lang').value;
+        const randomness = parseFloat(document.getElementById('randomness').value);
+        const melodyRate = parseFloat(document.getElementById('melodyRate').value);
+        const melodyAmplitude = parseFloat(document.getElementById('melodyAmplitude').value);
+        const spaceDelay = parseFloat(document.getElementById('spaceDelay').value);
+        const punctuationDelay = parseFloat(document.getElementById('punctuationDelay').value);
+        const maxRetries = parseInt(document.getElementById('maxRetries').value, 10);
+
+        const punctuationsStr = document.getElementById('punctuations').value;
+        const punctuations = punctuationsStr ? punctuationsStr.split('') : undefined;
+
+        log(`[Client] 생성 시작 '${text}'`);
+        playBtn.disabled = true;
+
+        let analyzer;
+        if (lang === 'en') analyzer = new EnglishAnalyzer();
+        else if (lang === 'ja') analyzer = new JapaneseAnalyzer();
+        else analyzer = new KoreanAnalyzer();
+
+        const config = {
+          analyzer,
+          sampleProvider: new WebSampleProvider(baseUrl, sampleRate, maxRetries),
+          effect: new PitchManager(pitch, speed, randomness),
+          sampleRate,
+          melodyRate,
+          melodyAmplitude,
+          spaceDelay,
+          punctuationDelay,
+          punctuations
+        };
+
+        const engine = new AnimaleseEngine(config);
+
+        try {
+          const timeline = [];
+          const float32Chunks = [];
+          let totalSampleCount = 0;
+
+          // Streaming (synthesis) loop
+          for await (const result of engine.synthesize(text, false)) {
+            const chunk = result.buffer;
+            float32Chunks.push(chunk);
+            if (result.char) {
+              timeline.push({
+                char: result.char,
+                sampleOffset: totalSampleCount
+              });
+            }
+            totalSampleCount += chunk.length;
+          }
+
+          // Merge accumulated chunks into a single buffer
+          const mergedFloat32 = new Float32Array(totalSampleCount);
+          let offset = 0;
+          for (const chunk of float32Chunks) {
+            mergedFloat32.set(chunk, offset);
+            offset += chunk.length;
+          }
+
+          const audioBuffer = audioContext.createBuffer(1, mergedFloat32.length, sampleRate);
+          audioBuffer.copyToChannel(mergedFloat32, 0);
+
+          const source = audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(audioContext.destination);
+          source.start(0);
+
+          const typedTextEl = document.getElementById('typedTextContainer');
+          typedTextEl.textContent = '';
+
+          timeline.forEach(item => {
+            const timeInSeconds = item.sampleOffset / sampleRate;
+            setTimeout(() => {
+              typedTextEl.textContent += item.char;
+            }, timeInSeconds * 1000);
+          });
+
+          log(`[Client] 재생 성공! 샘플레이트: ${sampleRate}Hz, 총 오디오 버퍼 조각 갯수: ${totalSampleCount}`);
+        } catch (err) {
+          log(`[Error] 생성 실패: ${err.message}`);
+          console.error(err);
+        } finally {
+          playBtn.disabled = false;
+        }
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🗣️ Animalese TTS Static App (GitHub Pages)</h1>
+
+    <label>텍스트 문장</label>
+    <input type="text" id="text"
+      value="꺄아~! 완전 대박! 나 방금 새로운 댄스 스텝을 연습 중이었어! 나중에 내가 우주 대스타가 되면 지금 이 사인, 엄청 귀해질걸? 미리미리 받아두는 게 좋을 거야, 반짝!" />
+
+    <details
+      style="margin-top: 1rem; border: 1px solid #4c566a; border-radius: 5px; padding: 10px; margin-bottom: 20px;">
+      <summary style="cursor: pointer; font-weight: bold; padding: 5px; outline: none;">⚙️ 추가 설정 (클릭하여 열기)</summary>
+      <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
+        <label>언어</label>
+        <select id="lang">
+          <option value="ko">한국어 (Korean)</option>
+          <option value="en">영어 (English)</option>
+          <option value="ja">일본어 (Japanese)</option>
+        </select>
+
+        <label>Pitch 배율 (기본 1.5배)</label>
+        <input type="number" id="pitch" value="1.5" step="0.1" min="0.5" max="3.0" />
+
+        <label>Speed 배율 (기본 4.0배)</label>
+        <input type="number" id="speed" value="4.0" step="0.1" min="0.5" max="5.0" />
+
+        <label>Randomness (피치 변동폭, 기본 0.1)</label>
+        <input type="number" id="randomness" value="0.1" step="0.1" min="0" max="1.0" />
+
+        <label>Melody Rate (음률 속도, 기본 0.05)</label>
+        <input type="number" id="melodyRate" value="0.05" step="0.01" min="0" max="1.0" />
+
+        <label>Melody Amplitude (음률 진폭, 기본 0.1)</label>
+        <input type="number" id="melodyAmplitude" value="0.1" step="0.01" min="0" max="1.0" />
+
+        <label>띄어쓰기 대기 시간 (초, 기본 0.03)</label>
+        <input type="number" id="spaceDelay" value="0.03" step="0.01" min="0" max="5.0" />
+
+        <label>마침표/특수기호 대기 시간 (초, 기본 0.3)</label>
+        <input type="number" id="punctuationDelay" value="0.3" step="0.1" min="0" max="5.0" />
+
+        <label>없는 음소 재시도 제한 횟수 (기본 3번)</label>
+        <input type="number" id="maxRetries" value="3" step="1" min="0" max="100" />
+
+        <label>대기할 특수기호 목록 (문자열 나열, 기본: .,!?'"~。、！？)</label>
+        <input type="text" id="punctuations" value=".,!?'&quot;()~。、！？" />
+      </div>
+    </details>
+
+    <button id="playBtn">▶️ 브라우저에서 직접 합성 및 재생</button>
+    <div id="typedTextContainer"
+      style="font-size: 1rem; font-weight: bold; color: #ebcb8b; margin-top: 1rem; min-height: 3rem; word-break: break-all;">
+    </div>
+    <div id="log">안내: 버튼을 누르면 클라이언트 단에서 합성을 진행하고 재생합니다.</div>
+  </div>
+</body>
+
+</html>

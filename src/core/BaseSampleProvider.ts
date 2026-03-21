@@ -1,21 +1,37 @@
 import type { SampleProvider } from '../interfaces'
 
+/**
+ * Abstract base class for fetching and caching audio samples.
+ */
 export abstract class BaseSampleProvider implements SampleProvider {
   protected readonly cache: Map<string, Float32Array> = new Map()
+  protected readonly failureCount: Map<string, number> = new Map()
 
-  constructor(public readonly targetSampleRate: number) { }
+  constructor(public readonly targetSampleRate: number, public readonly maxRetries: number = 3) { }
 
   public async getSample(phoneme: string): Promise<Float32Array | undefined> {
     if (this.cache.has(phoneme)) {
       return this.cache.get(phoneme)
     }
 
-    const sample = await this.fetchSample(phoneme)
-    if (sample) {
-      this.cache.set(phoneme, sample)
+    const fails = this.failureCount.get(phoneme) || 0
+    if (fails >= this.maxRetries) {
+      return undefined
     }
 
-    return sample
+    try {
+      const sample = await this.fetchSample(phoneme)
+      if (sample) {
+        this.cache.set(phoneme, sample)
+        return sample
+      } else {
+        this.failureCount.set(phoneme, fails + 1)
+        return undefined
+      }
+    } catch (e) {
+      this.failureCount.set(phoneme, fails + 1)
+      throw e
+    }
   }
 
   protected abstract fetchSample(phoneme: string): Promise<Float32Array | undefined>

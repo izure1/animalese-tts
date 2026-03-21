@@ -27,7 +27,8 @@
     "test": "jest",
     "build:types": "tsc --project tsconfig.build.json --outDir dist/types",
     "build": "node build/esbuild.config.js && npm run build:types",
-    "dev": "npx tsx sample/server.ts"
+    "prestart": "npm run build",
+    "start": "npx serve docs"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

@@ -4,11 +4,14 @@ import * as path from 'node:path'
 import { WavDecoder } from './WavDecoder'
 import { BaseSampleProvider } from './BaseSampleProvider'
 
+/**
+ * Sample provider that fetches audio files from the local file system.
+ */
 export class FileSystemSampleProvider extends BaseSampleProvider {
   private readonly decoder: WavDecoder = new WavDecoder()
 
-  constructor(targetSampleRate: number, private samplesDirectory: string) {
-    super(targetSampleRate)
+  constructor(targetSampleRate: number, private samplesDirectory: string, maxRetries: number = 3) {
+    super(targetSampleRate, maxRetries)
   }
 
   protected async fetchSample(phoneme: string): Promise<Float32Array | undefined> {
@@ -36,7 +39,10 @@ export class FileSystemSampleProvider extends BaseSampleProvider {
     }
   }
 
-  // 지정한 폴더 내의 모든 .wav 파일을 스캔하여 캐시에 일괄 적재(Preload)합니다.
+  /**
+   * Scans the specified directory and preloads all .wav files into the cache.
+   * @param directoryPath The path to the directory containing .wav files.
+   */
   public async loadDirectory(directoryPath: string = this.samplesDirectory): Promise<void> {
     try {
       await fs.access(directoryPath, constants.R_OK)

@@ -1,5 +1,9 @@
 import type { TextAnalyzer, PhonemeToken } from '../interfaces'
 
+/**
+ * Text analyzer implementation for the Japanese language.
+ * Handles Hiragana, Katakana, and Romaji characters.
+ */
 export class JapaneseAnalyzer implements TextAnalyzer {
   public analyze(text: string): PhonemeToken[][] {
     const phonemes: PhonemeToken[][] = []

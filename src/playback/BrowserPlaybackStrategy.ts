@@ -1,5 +1,8 @@
 import type { PlaybackStrategy } from '../interfaces'
 
+/**
+ * Playback strategy for browser environments using the Web Audio API.
+ */
 export class BrowserPlaybackStrategy implements PlaybackStrategy {
   private audioContext: AudioContext
 
@@ -12,6 +15,10 @@ export class BrowserPlaybackStrategy implements PlaybackStrategy {
     this.audioContext = new AudioContextClass()
   }
 
+  /**
+   * Plays the provided audio buffer through the browser's AudioContext.
+   * @param bufferData The audio data to play.
+   */
   public async play(bufferData: Float32Array): Promise<void> {
     const sampleRate = 44100
     const audioBuffer = this.audioContext.createBuffer(1, bufferData.length, sampleRate)

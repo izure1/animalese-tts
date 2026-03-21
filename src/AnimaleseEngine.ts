@@ -1,9 +1,10 @@
 import { TextAnalyzer, SampleProvider, AudioEffect, SynthesisOutput } from './interfaces'
 import { AudioConverter } from './core/AudioConverter'
 
+/**
+ * Configuration options for the Animalese Engine.
+ */
 export interface AnimalVoiceConfig {
-  basePitch: number
-  randomness: number
   analyzer: TextAnalyzer
   sampleProvider: SampleProvider
   effect: AudioEffect
@@ -15,9 +16,18 @@ export interface AnimalVoiceConfig {
   punctuations?: string[]
 }
 
+/**
+ * The core engine that synthesizes text into animal-like speech sounds.
+ */
 export class AnimaleseEngine {
   constructor(private config: AnimalVoiceConfig) { }
 
+  /**
+   * Synthesizes the given text into an asynchronous stream of audio outputs.
+   * @param text The input text to synthesize.
+   * @param asInt16 Whether to output Int16Array instead of Float32Array.
+   * @returns An async generator yielding synthesis outputs character by character.
+   */
   public async *synthesize(text: string, asInt16: boolean = false): AsyncGenerator<SynthesisOutput, void, unknown> {
     const tokenGroups = this.config.analyzer.analyze(text)
     const chars = text.split('')
@@ -46,7 +56,7 @@ export class AnimaleseEngine {
 
         if (isPunctuation) {
           charIndex = 0
-          totalAudioSamples = 0 // 문장 부호를 만나면 누적 시간 초기화
+          totalAudioSamples = 0
           expectedAudioSamples = 0
           lastBufferLength = 0
         }
@@ -223,7 +233,7 @@ export class AnimaleseEngine {
   }
 
   public calculatePitch(charIndex: number): number {
-    let pitch = this.config.basePitch
+    let pitch = this.config.effect.basePitch ?? 1.0
 
     const amplitude = this.config.melodyAmplitude ?? 0.1
     const melodyRate = this.config.melodyRate || 0.05
@@ -232,8 +242,6 @@ export class AnimaleseEngine {
 
     pitch += Math.sin(charIndex * radianStep) * amplitude
 
-    console.log(charIndex, pitch)
-
-    return pitch + (Math.random() - 0.5) * this.config.randomness
+    return pitch + (Math.random() - 0.5) * (this.config.effect.randomness ?? 0.0)
   }
 }
