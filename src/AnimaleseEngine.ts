@@ -41,8 +41,6 @@ export class AnimaleseEngine {
     let lastBufferLength = 0
     let pendingUnsupportedChars = ''
 
-    console.log(tokenGroups)
-
     for (let i = 0; i < tokenGroups.length; i++) {
       const tokens = tokenGroups[i]
       if (tokens.length === 0) continue

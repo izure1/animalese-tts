@@ -32,7 +32,8 @@
     }
 
     input,
-    select {
+    select,
+    textarea {
       width: 100%;
       padding: 0.5rem;
       margin-bottom: 1rem;
@@ -40,6 +41,12 @@
       border-radius: 4px;
       background: #444;
       color: white;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+
+    textarea {
+      resize: vertical;
     }
 
     button {
@@ -202,8 +209,8 @@
     <h1>🗣️ Animalese TTS Static App (GitHub Pages)</h1>
 
     <label>텍스트 문장</label>
-    <input type="text" id="text"
-      value="꺄아~! 완전 대박! 나 방금 새로운 댄스 스텝을 연습 중이었어! 나중에 내가 우주 대스타가 되면 지금 이 사인, 엄청 귀해질걸? 미리미리 받아두는 게 좋을 거야, 반짝!" />
+    <textarea id="text"
+      rows="4">꺄아~! 완전 대박! 나 방금 새로운 댄스 스텝을 연습 중이었어! 나중에 내가 우주 대스타가 되면 지금 이 사인, 엄청 귀해질걸? 미리미리 받아두는 게 좋을 거야, 반짝!</textarea>
 
     <details
       style="margin-top: 1rem; border: 1px solid #4c566a; border-radius: 5px; padding: 10px; margin-bottom: 20px;">
