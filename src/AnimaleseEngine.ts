@@ -50,8 +50,6 @@ export class AnimaleseEngine {
       let pendingPhoneme: string = ''
       let shouldMergeNext = false
 
-      console.log(tokens)
-
       for (const token of tokens) {
         if (!token.phoneme) continue
 

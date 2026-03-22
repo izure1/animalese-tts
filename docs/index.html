@@ -117,6 +117,7 @@
         let analyzer;
         if (lang === 'en') {
           analyzer = new EnglishAnalyzer();
+          sampleRate = 48000;
           baseUrl = '/sounds/english';
         } else if (lang === 'ja') {
           analyzer = new JapaneseAnalyzer();
