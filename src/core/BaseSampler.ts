@@ -51,6 +51,10 @@ export abstract class BaseSampler implements Sampler {
     }
   }
 
+  public isCached(phoneme: string): boolean {
+    return BaseSampler.globalCache.has(this.getCacheKey(phoneme))
+  }
+
   protected abstract fetchSample(phoneme: string): Promise<Float32Array | undefined>
 
   public async loadSample(phoneme: string, buffer: Float32Array, sampleRate: number): Promise<void> {

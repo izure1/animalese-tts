@@ -20,6 +20,7 @@ export interface Sampler {
   sampleRate: number;
   getSample(phoneme: string): Promise<Float32Array | undefined>
   loadSample(phoneme: string, buffer: Float32Array, sampleRate: number): Promise<void>
+  isCached(phoneme: string): boolean
 }
 
 /**

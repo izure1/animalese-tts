@@ -1,5 +1,6 @@
 export * from './interfaces'
 export * from './core/AudioConverter'
+export * from './core/TTSSpeaker'
 export * from './AnimaleseEngine'
 export * from './analyzers/KoreanAnalyzer'
 export * from './analyzers/EnglishAnalyzer'

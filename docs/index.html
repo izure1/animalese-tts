@@ -148,12 +148,22 @@
       const engine = new AnimaleseEngine(config);
 
       try {
+        const speaker = engine.synthesize(text, false);
+
+        speaker.on('requested', (tokens) => log(`[Client] 데이터 로드 시작: ${tokens.length}개의 리소스`));
+        speaker.on('loading', (tokens) => log(`[Client] 리소스 로딩 중: ${tokens.length}개 대상`));
+        speaker.on('loaded', (token) => log(`[Client] 단일 리소스 로드 완료: ${token}`));
+        speaker.on('completed', (tokens) => log(`[Client] 로드 프로세스 완료: 총 ${tokens.length}개 로드 성공`));
+        speaker.on('failed', (token) => log(`[Client] 리소스 로드 실패: ${token}`));
+
         const timeline = [];
         const float32Chunks = [];
         let totalSampleCount = 0;
 
+        await speaker.load();
+
         // Streaming (synthesis) loop
-        for await (const result of engine.synthesize(text, false)) {
+        for await (const result of speaker.speak()) {
           const chunk = result.buffer;
           float32Chunks.push(chunk);
           if (result.char) {

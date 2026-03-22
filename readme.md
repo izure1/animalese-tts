@@ -55,7 +55,14 @@ const engine = new AnimaleseEngine({
 
 // Synthesis and Output Example
 async function speak(text: string) {
-  for await (const output of engine.synthesize(text)) {
+  const speaker = engine.synthesize(text)
+  
+  speaker.on('loading', () => console.log('Loading missing audio samples...'))
+  speaker.on('completed', () => console.log('All samples loaded!'))
+  
+  await speaker.load()
+  
+  for await (const output of speaker.speak()) {
     console.log(`Synthesizing character: ${output.char}`)
     // Play output.buffer (Float32Array) or save it to a file
   }
