@@ -87,6 +87,31 @@ speak("Hello! This is an Animal Crossing voice test.")
 - `sampleRate`: The sample rate of the original sample data in Hz. (e.g., 44100)
 - `maxRetries`: (Optional) Maximum number of retries when loading missing phoneme files.
 
+### Environment-Specific Sampler Options
+
+Depending on the environment, you must use a specific `Sampler` implementation and provide its required property to locate the audio sample data:
+
+- **Node.js (`FileSystemSampler`)**: 
+  - `samplesDirectory`: The absolute or relative path to the local directory containing the `.wav` sample files.
+- **Browser (`WebSampler`)**: 
+  - `baseUrl`: The URL path where the `.wav` sample files are hosted on the web server.
+
+### Phoneme Audio Data Structure
+
+The audio sample files must be provided as `.wav` format files. Each file must be named exactly after the corresponding phoneme analyzed by the `TextAnalyzer`. All files must be placed flatly within the `samplesDirectory` or `baseUrl` folder.
+
+For example, if you are using the `KoreanAnalyzer`, the text is broken down into onset, nucleus, and coda (e.g., "안" -> `ㅇ`, `ㅏ`, `ㄴ`). Thus, your `samplesDirectory` or `baseUrl` directory should contain files named like:
+- `ㅇ.wav`
+- `ㅏ.wav`
+- `ㄴ.wav`
+
+For English (`EnglishAnalyzer`) and Japanese (`JapaneseAnalyzer`), the text is converted internally into alphabetical phonemes (e.g., romaji or lowercase English). Thus, the required files are simply alphabetical:
+- `a.wav`
+- `b.wav`
+- `k.wav`
+
+> **Note**: If a corresponding phoneme audio file (`.wav`) is missing or fails to load from the `samplesDirectory` or `baseUrl`, that specific character will be treated as silence (muted) during synthesis.
+
 ### PitchManager Parameter Options (`PitchManagerOptions`)
 
 - `pitch`: The base tone of the voice. 1.0 is standard; higher is thinner, lower is deeper. 
