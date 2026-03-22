@@ -41,15 +41,69 @@ export class PitchManager implements AudioEffect {
     if (pitchRatio === 1.0 && this.speed === 1.0) return buffer
     if (buffer.length === 0) return buffer
 
-    const pitchedLength = Math.floor(buffer.length / pitchRatio)
+    // Apply adaptive zero-phase low-pass filter to prevent aliasing without muffling vowels
+    let processBuffer = buffer
+    if (pitchRatio > 1.0) {
+      // 1. Calculate Zero-Crossing Rate (ZCR) to distinguish vowels (low ZCR) from fricatives/noise (high ZCR)
+      let zcr = 0
+      for (let i = 1; i < buffer.length; i++) {
+        if ((buffer[i] >= 0 && buffer[i - 1] < 0) || (buffer[i] < 0 && buffer[i - 1] >= 0)) {
+          zcr++
+        }
+      }
+      const zcrRate = zcr / buffer.length
+
+      // 2. Map ZCR to a noise factor (0.0 for vowels, 1.0 for harsh noise like '스')
+      const noiseFactor = Math.max(0, Math.min(1, (zcrRate - 0.1) / 0.2))
+
+      // 3. Vowels get light filtering (0.8) to preserve brightness.
+      // Noise/fricatives get aggressive filtering (0.3) to kill harsh wind noises.
+      const cutRatio = 0.8 - (0.5 * noiseFactor)
+      const alpha = Math.min(1.0, cutRatio / pitchRatio)
+
+      const filtered = new Float32Array(buffer.length)
+
+      // Pass 1: Forward
+      let lastVal = 0
+      for (let i = 0; i < buffer.length; i++) {
+        lastVal = lastVal + alpha * (buffer[i] - lastVal)
+        filtered[i] = lastVal
+      }
+
+      // Pass 2: Backward (Zero-phase)
+      lastVal = 0
+      for (let i = buffer.length - 1; i >= 0; i--) {
+        lastVal = lastVal + alpha * (filtered[i] - lastVal)
+        filtered[i] = lastVal
+      }
+
+      // If it's noisy/fricative, apply two more passes for a steeper -24dB/oct cutoff
+      if (noiseFactor > 0.5) {
+        lastVal = 0
+        for (let i = 0; i < buffer.length; i++) {
+          lastVal = lastVal + alpha * (filtered[i] - lastVal)
+          filtered[i] = lastVal
+        }
+
+        lastVal = 0
+        for (let i = buffer.length - 1; i >= 0; i--) {
+          lastVal = lastVal + alpha * (filtered[i] - lastVal)
+          filtered[i] = lastVal
+        }
+      }
+
+      processBuffer = filtered
+    }
+
+    const pitchedLength = Math.floor(processBuffer.length / pitchRatio)
     const pitchedBuffer = new Float32Array(pitchedLength)
 
     for (let i = 0; i < pitchedLength; i++) {
       const srcIndex = i * pitchRatio
       const srcInt = Math.floor(srcIndex)
       const srcFrac = srcIndex - srcInt
-      const v1 = buffer[srcInt] || 0
-      const v2 = buffer[srcInt + 1] || 0
+      const v1 = processBuffer[srcInt] || 0
+      const v2 = processBuffer[srcInt + 1] || 0
       pitchedBuffer[i] = v1 + srcFrac * (v2 - v1)
     }
 
