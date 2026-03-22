@@ -85,7 +85,7 @@
       const logEl = document.getElementById('log');
 
       let audioContext;
-      let sampleRate = 0;
+      let sampleRate = 48000;
       let baseUrl = './sounds';
 
       // WebSampleProvider preload using a known list or let it block dynamically
@@ -117,16 +117,13 @@
         let analyzer;
         if (lang === 'en') {
           analyzer = new EnglishAnalyzer();
-          sampleRate = 48000;
           baseUrl = '/sounds/english';
         } else if (lang === 'ja') {
           analyzer = new JapaneseAnalyzer();
-          sampleRate = 48000;
           baseUrl = '/sounds/japanese';
           console.log(analyzer, baseUrl);
         } else {
           analyzer = new KoreanAnalyzer();
-          sampleRate = 44100;
           baseUrl = '/sounds/korean';
         }
 

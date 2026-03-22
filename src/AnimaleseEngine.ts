@@ -41,9 +41,19 @@ export class AnimaleseEngine {
     let lastBufferLength = 0
     let pendingUnsupportedChars = ''
 
+    console.log(tokenGroups)
+
     for (let i = 0; i < tokenGroups.length; i++) {
       const tokens = tokenGroups[i]
-      const originalChar = chars[i] || ''
+      if (tokens.length === 0) continue
+
+      // 현재 그룹에 병합된 후속 빈 그룹의 문자를 모아서 originalChar에 포함
+      let originalChar = chars[i] || ''
+      let j = i + 1
+      while (j < tokenGroups.length && tokenGroups[j].length === 0) {
+        originalChar += chars[j] || ''
+        j++
+      }
       let charYieldCount = 0
 
       let pendingBuffer: Float32Array | null = null
@@ -136,12 +146,22 @@ export class AnimaleseEngine {
 
             if (totalAudioSamples > expectedAudioSamples) {
               const emptyBuffer = new Float32Array(0)
-              yield { char: charToYield, phoneme: pendingPhoneme + token.phoneme, pitch, buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer }
+              yield {
+                char: charToYield,
+                phoneme: pendingPhoneme + token.phoneme,
+                pitch,
+                buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer
+              }
             } else {
               lastBufferLength = processedBuffer.length
               totalAudioSamples += processedBuffer.length
               const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
-              yield { char: charToYield, phoneme: pendingPhoneme + token.phoneme, pitch, buffer: finalBuffer }
+              yield {
+                char: charToYield,
+                phoneme: pendingPhoneme + token.phoneme,
+                pitch,
+                buffer: finalBuffer
+              }
             }
 
             pendingBuffer = null
@@ -162,12 +182,22 @@ export class AnimaleseEngine {
 
             if (totalAudioSamples > expectedAudioSamples) {
               const emptyBuffer = new Float32Array(0)
-              yield { char: charToYield, phoneme: pendingPhoneme, pitch, buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer }
+              yield {
+                char: charToYield,
+                phoneme: pendingPhoneme,
+                pitch,
+                buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer
+              }
             } else {
               lastBufferLength = processedBuffer.length
               totalAudioSamples += processedBuffer.length
               const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
-              yield { char: charToYield, phoneme: pendingPhoneme, pitch, buffer: finalBuffer }
+              yield {
+                char: charToYield,
+                phoneme: pendingPhoneme,
+                pitch,
+                buffer: finalBuffer
+              }
             }
           }
 
@@ -188,12 +218,22 @@ export class AnimaleseEngine {
 
             if (totalAudioSamples > expectedAudioSamples) {
               const emptyBuffer = new Float32Array(0)
-              yield { char: charToYield, phoneme: token.phoneme, pitch, buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer }
+              yield {
+                char: charToYield,
+                phoneme: token.phoneme,
+                pitch,
+                buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer
+              }
             } else {
               lastBufferLength = processedBuffer.length
               totalAudioSamples += processedBuffer.length
               const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
-              yield { char: charToYield, phoneme: token.phoneme, pitch, buffer: finalBuffer }
+              yield {
+                char: charToYield,
+                phoneme: token.phoneme,
+                pitch,
+                buffer: finalBuffer
+              }
             }
             pendingBuffer = null
             pendingPhoneme = ''
@@ -215,12 +255,22 @@ export class AnimaleseEngine {
 
         if (totalAudioSamples > expectedAudioSamples) {
           const emptyBuffer = new Float32Array(0)
-          yield { char: charToYield, phoneme: pendingPhoneme, pitch, buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer }
+          yield {
+            char: charToYield,
+            phoneme: pendingPhoneme,
+            pitch,
+            buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer
+          }
         } else {
           lastBufferLength = processedBuffer.length
           totalAudioSamples += processedBuffer.length
           const finalBuffer = asInt16 ? AudioConverter.float32ToInt16(processedBuffer) : processedBuffer
-          yield { char: charToYield, phoneme: pendingPhoneme, pitch, buffer: finalBuffer }
+          yield {
+            char: charToYield,
+            phoneme: pendingPhoneme,
+            pitch,
+            buffer: finalBuffer
+          }
         }
       }
 
@@ -231,7 +281,12 @@ export class AnimaleseEngine {
 
     if (pendingUnsupportedChars !== '') {
       const emptyBuffer = new Float32Array(0)
-      yield { char: pendingUnsupportedChars, phoneme: '', pitch: 1.0, buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer }
+      yield {
+        char: pendingUnsupportedChars,
+        phoneme: '',
+        pitch: 1.0,
+        buffer: asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer
+      }
     }
   }
 }

@@ -7,7 +7,6 @@ const DIGRAPHS = ['sh', 'ch', 'th', 'wh', 'ph', 'ck', 'qu', 'ng']
  * Merges consonant->vowel and vowel->vowel, but not others.
  * Exceptions: 
  * - Digraphs (sh, ch, th, etc.) are always merged together.
- * - Consonants following 2+ vowels are merged into the vowel group.
  */
 export class EnglishAnalyzer implements TextAnalyzer {
   private isVowel(char: string): boolean {
@@ -57,10 +56,8 @@ export class EnglishAnalyzer implements TextAnalyzer {
           // 다음 문자가 모음이면 계속 병합 (mergeWithNext = true)
           group[group.length - 1].mergeWithNext = true
         } else if (nextChar && this.isConsonant(nextChar)) {
-          // 다음 문자가 자음인 경우:
-          // 현재 문자가 모음이고, 그 앞 문자도 모음이면 병합 (2번 이상 연속된 모음 뒤의 자음)
-          const prevChar = i + consumed - 2 >= 0 ? normalizedText[i + consumed - 2] : ''
-          if (this.isVowel(currentChar) && this.isVowel(prevChar)) {
+          // 같은 자음이 연속이면 병합 (ll, pp, tt 등)
+          if (currentChar === nextChar) {
             group[group.length - 1].mergeWithNext = true
           } else {
             break

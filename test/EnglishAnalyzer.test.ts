@@ -19,34 +19,32 @@ describe('EnglishAnalyzer', () => {
     ])
   })
 
-  test('should merge consonant after 2+ vowels', () => {
-    // would -> woul, d
+  test('should not merge consonant after vowels', () => {
+    // would -> wou, l, d
     const result = analyzer.analyze('would')
     expect(result).toEqual([
       [
         { phoneme: 'w', mergeWithNext: true },
         { phoneme: 'o', mergeWithNext: true },
-        { phoneme: 'u', mergeWithNext: true },
-        { phoneme: 'l', mergeWithNext: false }
+        { phoneme: 'u', mergeWithNext: false }
       ],
       [],
       [],
-      [],
+      [{ phoneme: 'l', mergeWithNext: false }],
       [{ phoneme: 'd', mergeWithNext: false }]
     ])
 
-    // good -> good
+    // good -> goo, d
     const result2 = analyzer.analyze('good')
     expect(result2).toEqual([
       [
         { phoneme: 'g', mergeWithNext: true },
         { phoneme: 'o', mergeWithNext: true },
-        { phoneme: 'o', mergeWithNext: true },
-        { phoneme: 'd', mergeWithNext: false }
+        { phoneme: 'o', mergeWithNext: false }
       ],
       [],
       [],
-      []
+      [{ phoneme: 'd', mergeWithNext: false }]
     ])
   })
 
