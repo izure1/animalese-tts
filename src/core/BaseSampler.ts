@@ -9,8 +9,12 @@ export interface SamplerOptions {
  * Abstract base class for fetching and caching audio samples.
  */
 export abstract class BaseSampler implements Sampler {
-  protected readonly cache: Map<string, Float32Array> = new Map()
-  protected readonly failureCount: Map<string, number> = new Map()
+  protected static readonly globalCache: Map<string, Float32Array> = new Map()
+  protected static readonly globalFailureCount: Map<string, number> = new Map()
+
+  protected getCacheKey(phoneme: string): string {
+    return phoneme
+  }
 
   public readonly sampleRate: number;
   public readonly maxRetries: number;
@@ -21,11 +25,13 @@ export abstract class BaseSampler implements Sampler {
   }
 
   public async getSample(phoneme: string): Promise<Float32Array | undefined> {
-    if (this.cache.has(phoneme)) {
-      return this.cache.get(phoneme)
+    const key = this.getCacheKey(phoneme)
+
+    if (BaseSampler.globalCache.has(key)) {
+      return BaseSampler.globalCache.get(key)
     }
 
-    const fails = this.failureCount.get(phoneme) || 0
+    const fails = BaseSampler.globalFailureCount.get(key) || 0
     if (fails >= this.maxRetries) {
       return undefined
     }
@@ -33,14 +39,14 @@ export abstract class BaseSampler implements Sampler {
     try {
       const sample = await this.fetchSample(phoneme)
       if (sample) {
-        this.cache.set(phoneme, sample)
+        BaseSampler.globalCache.set(key, sample)
         return sample
       } else {
-        this.failureCount.set(phoneme, fails + 1)
+        BaseSampler.globalFailureCount.set(key, fails + 1)
         return undefined
       }
     } catch (e) {
-      this.failureCount.set(phoneme, fails + 1)
+      BaseSampler.globalFailureCount.set(key, fails + 1)
       throw e
     }
   }
@@ -51,7 +57,7 @@ export abstract class BaseSampler implements Sampler {
     if (sampleRate !== this.sampleRate) {
       throw new Error(`[BaseSampler] 샘플레이트 불일치: 기대값 ${this.sampleRate}, 실제값 ${sampleRate}`)
     }
-    this.cache.set(phoneme, buffer)
+    BaseSampler.globalCache.set(this.getCacheKey(phoneme), buffer)
   }
 
   protected resample(buffer: Float32Array, sourceRate: number, targetRate: number): Float32Array {

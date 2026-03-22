@@ -20,6 +20,10 @@ export class FileSystemSampler extends BaseSampler {
     this.samplesDirectory = options.samplesDirectory;
   }
 
+  protected getCacheKey(phoneme: string): string {
+    return `${this.samplesDirectory}_${phoneme}`;
+  }
+
   protected async fetchSample(phoneme: string): Promise<Float32Array | undefined> {
     const filePath = path.join(this.samplesDirectory, `${phoneme}.wav`)
 

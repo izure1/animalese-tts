@@ -20,6 +20,10 @@ export class WebSampler extends BaseSampler {
     this.baseUrl = options.baseUrl;
   }
 
+  protected getCacheKey(phoneme: string): string {
+    return `${this.baseUrl}_${phoneme}`;
+  }
+
   protected async fetchSample(phoneme: string): Promise<Float32Array | undefined> {
     const url = `${this.baseUrl.replace(/\/$/, '')}/${encodeURIComponent(phoneme)}.wav`
     return this.fetchFromUrl(url)

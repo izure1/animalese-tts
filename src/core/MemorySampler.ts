@@ -8,6 +8,10 @@ export class MemorySampler extends BaseSampler {
     super(options)
   }
 
+  protected getCacheKey(phoneme: string): string {
+    return `memory_${phoneme}`;
+  }
+
   protected async fetchSample(phoneme: string): Promise<Float32Array | undefined> {
     return undefined
   }
