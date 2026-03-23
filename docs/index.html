@@ -84,15 +84,17 @@
       EnglishAnalyzer,
       JapaneseAnalyzer,
       WebSampler,
-      PitchManager
+      PitchManager,
+      BrowserPlaybackStrategy
     } from './animalese.browser.mjs';
 
     const playBtn = document.getElementById('playBtn');
     const logEl = document.getElementById('log');
 
-    let audioContext;
     let sampleRate = 48000;
     let baseUrl = './sounds';
+
+    const playbackStrategy = new BrowserPlaybackStrategy(sampleRate);
 
     // WebSampleProvider preload using a known list or let it block dynamically
     // For this demo, WebSampleProvider will fetch dynamically on-the-fly.
@@ -133,9 +135,6 @@
         baseUrl = '/sounds/korean';
       }
 
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate });
-      if (audioContext.state === 'suspended') await audioContext.resume();
-
       const config = {
         analyzer,
         sampler: new WebSampler({ sampleRate, maxRetries, baseUrl }),
@@ -156,50 +155,25 @@
         speaker.on('completed', (tokens) => log(`[Client] 로드 프로세스 완료: 총 ${tokens.length}개 로드 성공`));
         speaker.on('failed', (token) => log(`[Client] 리소스 로드 실패: ${token}`));
 
-        const timeline = [];
-        const float32Chunks = [];
         let totalSampleCount = 0;
 
         await speaker.load();
 
-        // Streaming (synthesis) loop
-        for await (const result of speaker.speak()) {
-          const chunk = result.buffer;
-          float32Chunks.push(chunk);
-          if (result.char) {
-            timeline.push({
-              char: result.char,
-              sampleOffset: totalSampleCount
-            });
-          }
-          totalSampleCount += chunk.length;
-        }
-
-        // Merge accumulated chunks into a single buffer
-        const mergedFloat32 = new Float32Array(totalSampleCount);
-        let offset = 0;
-        for (const chunk of float32Chunks) {
-          mergedFloat32.set(chunk, offset);
-          offset += chunk.length;
-        }
-
-        const audioBuffer = audioContext.createBuffer(1, mergedFloat32.length, sampleRate);
-        audioBuffer.copyToChannel(mergedFloat32, 0);
-
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
-        source.start(0);
-
         const typedTextEl = document.getElementById('typedTextContainer');
         typedTextEl.textContent = '';
 
-        timeline.forEach(item => {
-          const timeInSeconds = item.sampleOffset / sampleRate;
-          setTimeout(() => {
-            typedTextEl.textContent += item.char;
-          }, timeInSeconds * 1000);
-        });
+        // Streaming (synthesis) loop
+        for await (const result of speaker.speak()) {
+          const chunk = result.buffer;
+          totalSampleCount += chunk.length;
+
+          if (result.char) {
+            typedTextEl.textContent += result.char;
+          }
+
+          // 청크 단위로 즉시 재생 대기
+          await playbackStrategy.play(chunk);
+        }
 
         log(`[Client] 재생 성공! 샘플레이트: ${sampleRate}Hz, 총 오디오 버퍼 조각 갯수: ${totalSampleCount}`);
       } catch (err) {
@@ -214,7 +188,7 @@
 
 <body>
   <div class="container">
-    <h1>🗣️ Animalese TTS Static App (GitHub Pages)</h1>
+    <h1>🗣️ Animalese TTS</h1>
 
     <label>텍스트 문장</label>
     <textarea id="text"

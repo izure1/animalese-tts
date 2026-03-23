@@ -58,7 +58,7 @@ export class PitchManager implements AudioEffect {
 
       // 3. Vowels get light filtering (0.8) to preserve brightness.
       // Noise/fricatives get aggressive filtering (0.3) to kill harsh wind noises.
-      const cutRatio = 0.8 - (0.5 * noiseFactor)
+      const cutRatio = 0.85 - (0.55 * noiseFactor)
       const alpha = Math.min(1.0, cutRatio / pitchRatio)
 
       const filtered = new Float32Array(buffer.length)

@@ -6,20 +6,39 @@ import * as path from 'node:path'
  * Playback strategy for Node.js environments.
  * Encodes the audio buffer into a WAV file and saves it to the disk.
  */
-export class NodePlaybackStrategy implements PlaybackStrategy {
+export class NodePlayer implements PlaybackStrategy {
   private outputIndex = 0
+  private sampleRate: number
+
+  constructor(sampleRate: number) {
+    this.sampleRate = sampleRate
+  }
 
   /**
    * Encodes and writes the provided audio buffer to a local .wav file.
    * @param bufferData The audio data to save.
    */
   public async play(bufferData: Float32Array): Promise<void> {
-    const sampleRate = 44100
-    const wavBuffer = this.encodeWAV(bufferData, sampleRate)
+    const wavBuffer = this.encodeWAV(bufferData, this.sampleRate)
 
     this.outputIndex++
     const filename = path.resolve(process.cwd(), `output_${this.outputIndex}.wav`)
     await fs.promises.writeFile(filename, wavBuffer)
+  }
+
+  /**
+   * Merges multiple audio buffers into one and plays the result.
+   * @param buffers Array of Float32Array audio chunks.
+   */
+  public async drainAndPlay(buffers: Float32Array[]): Promise<void> {
+    const totalLength = buffers.reduce((sum, b) => sum + b.length, 0)
+    const merged = new Float32Array(totalLength)
+    let offset = 0
+    for (const buf of buffers) {
+      merged.set(buf, offset)
+      offset += buf.length
+    }
+    return this.play(merged)
   }
 
   private encodeWAV(samples: Float32Array, sampleRate: number): Buffer {
