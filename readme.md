@@ -49,7 +49,7 @@ import {
   WebSampler,
   PitchManager,
   BrowserPlayer
-} from 'animalese-tts'
+} from 'https://cdn.jsdelivr.net/npm/animalese-tts/+esm'
 
 const sampleRate = 44100
 // The URL where your .wav samples are hosted
