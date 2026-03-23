@@ -4,7 +4,7 @@ const commonConfig = {
   bundle: true,
   target: 'esnext',
   minify: true,
-  sourcemap: true,
+  sourcemap: false,
 }
 
 // 1. Node.js 빌드 (서버, CLI 용)
