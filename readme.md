@@ -1,5 +1,8 @@
 # Animalese TTS
 
+[![](https://data.jsdelivr.com/v1/package/npm/animalese-tts/badge)](https://www.jsdelivr.com/package/npm/animalese-tts)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
 Animalese TTS is an Animal Crossing style Voice Synthesis (TTS) engine. It analyzes text to synthesize audio samples corresponding to each phoneme, and applies pitch adjustments and melody variations to generate a cute and unique voice.
 
 👉 **[Go to Test Page (Demo)](https://animalese-tts.izure.org)**
@@ -18,14 +21,19 @@ Animalese TTS is an Animal Crossing style Voice Synthesis (TTS) engine. It analy
 ## Installation and Build
 
 ```bash
-# Install dependencies
-npm install
+npm install animalese-tts
+```
 
-# Build the project (creates the dist folder)
-npm run build
-
-# Run tests
-npm test
+```html
+<script type="module">
+  import {
+    AnimaleseEngine,
+    KoreanAnalyzer,
+    WebSampler,
+    PitchManager,
+    BrowserPlayer
+  } from 'https://cdn.jsdelivr.net/npm/animalese-tts/+esm'
+</script>
 ```
 
 ## Usage (Example)
