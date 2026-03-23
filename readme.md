@@ -30,7 +30,52 @@ npm test
 
 ## Usage (Example)
 
-### AnimaleseEngine Configuration
+### Browser (Web) Environment
+
+In a browser environment, you use `WebSampler` to fetch samples via HTTP and `BrowserPlayer` to play audio using the Web Audio API.
+
+```typescript
+import {
+  AnimaleseEngine,
+  KoreanAnalyzer,
+  WebSampler,
+  PitchManager,
+  BrowserPlayer
+} from 'animalese-tts'
+
+const sampleRate = 44100
+// The URL where your .wav samples are hosted
+const baseUrl = 'https://your-server.com/samples'
+
+const player = new BrowserPlayer(sampleRate)
+
+const engine = new AnimaleseEngine({
+  analyzer: new KoreanAnalyzer(),
+  sampler: new WebSampler({
+    sampleRate,
+    baseUrl
+  }),
+  effect: new PitchManager({
+    pitch: 1.5,
+    speed: 4.0
+  })
+})
+
+async function speak(text: string) {
+  const speaker = engine.synthesize(text)
+  await speaker.load()
+  
+  for await (const output of speaker.speak()) {
+    await player.play(output.buffer)
+  }
+}
+
+speak("안녕하세요! 브라우저에서의 목소리 테스트입니다.")
+```
+
+### Node.js Environment
+
+In a Node.js environment, you use `FileSystemSampler` to read samples from the local disk and `NodePlayer` to play or save the audio.
 
 ```typescript
 import {
@@ -38,52 +83,37 @@ import {
   KoreanAnalyzer,
   FileSystemSampler,
   PitchManager,
-  BrowserPlayer, // Browser environment
-  NodePlayer     // Node.js environment
+  NodePlayer
 } from 'animalese-tts'
-
 
 const sampleRate = 44100
 const samplesDirectory = './samples'
 
-const player = new BrowserPlayer(sampleRate) // or new NodePlayer(sampleRate)
+const player = new NodePlayer(sampleRate)
 
 const engine = new AnimaleseEngine({
   analyzer: new KoreanAnalyzer(),
   sampler: new FileSystemSampler({
-    sampleRate,       // Sample rate of the original sample data (Hz)
-    maxRetries: 3,    // Maximum number of retries when loading missing phoneme files
-    samplesDirectory  // Directory where the original sample data is stored
+    sampleRate,
+    samplesDirectory
   }),
   effect: new PitchManager({
-    pitch: 1.5,           // Pitch slightly higher than the default
-    speed: 4.0,           // Playback speed
-    randomness: 0.1,      // Random pitch variation range per character
-    melodyRate: 0.05,     // Melody variation rate
-    melodyAmplitude: 0.1  // Melody variation amplitude
-  }),
-  spaceDelay: 0.1,        // Silence delay inserted upon recognizing a space character (seconds)
-  punctuationDelay: 0.3   // Silence delay inserted upon recognizing punctuation (seconds)
+    pitch: 0.8,
+    speed: 3.5
+  })
 })
 
-
-// Synthesis and Output Example
 async function speak(text: string) {
   const speaker = engine.synthesize(text)
-  
-  speaker.on('loading', () => console.log('Loading missing audio samples...'))
-  speaker.on('completed', () => console.log('All samples loaded!'))
-  
   await speaker.load()
   
   for await (const output of speaker.speak()) {
-    console.log(`Synthesizing character: ${output.char}`)
-    // Play output.buffer (Float32Array) or save it to a file
+    // NodePlayer exports the buffer to a temporary or specified .wav file/stream
     await player.play(output.buffer)
   }
 }
 
-speak("Hello! This is an Animal Crossing voice test.")
+speak("안녕하세요! Node.js에서의 목소리 테스트입니다.")
 ```
 
 ## Detailed Configuration Options (AnimalVoiceConfig)

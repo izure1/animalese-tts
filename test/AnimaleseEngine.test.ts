@@ -11,7 +11,8 @@ describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
 
   beforeEach(() => {
     mockStrategy = {
-      play: jest.fn().mockResolvedValue(undefined)
+      play: jest.fn().mockResolvedValue(undefined),
+      drainAndPlay: jest.fn().mockResolvedValue(undefined)
     }
 
     sampler = new MemorySampler({ sampleRate: 44100 })
@@ -52,7 +53,8 @@ describe('AnimaleseEngine (EnglishAnalyzer)', () => {
 
   beforeEach(() => {
     mockStrategy = {
-      play: jest.fn().mockResolvedValue(undefined)
+      play: jest.fn().mockResolvedValue(undefined),
+      drainAndPlay: jest.fn().mockResolvedValue(undefined)
     }
 
     sampler = new MemorySampler({ sampleRate: 44100 })
