@@ -26,6 +26,16 @@
   "files": [
     "dist/**/*"
   ],
+  "license": "MIT",
+  "author": {
+    "email": "admin@izure.org",
+    "name": "izure",
+    "url": "https://izure.org"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/izure1/animalese-tts.git"
+  },
   "scripts": {
     "test": "jest",
     "build:types": "tsc --project tsconfig.build.json --outDir dist/types",
