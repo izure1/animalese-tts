@@ -85,7 +85,7 @@
       JapaneseAnalyzer,
       WebSampler,
       PitchManager,
-      BrowserPlaybackStrategy
+      BrowserPlayer
     } from './animalese.browser.mjs';
 
     const playBtn = document.getElementById('playBtn');
@@ -94,7 +94,7 @@
     let sampleRate = 48000;
     let baseUrl = './sounds';
 
-    const playbackStrategy = new BrowserPlaybackStrategy(sampleRate);
+    const player = new BrowserPlayer(sampleRate);
 
     // WebSampleProvider preload using a known list or let it block dynamically
     // For this demo, WebSampleProvider will fetch dynamically on-the-fly.
@@ -172,7 +172,7 @@
           }
 
           // 청크 단위로 즉시 재생 대기
-          await playbackStrategy.play(chunk);
+          await player.play(chunk);
         }
 
         log(`[Client] 재생 성공! 샘플레이트: ${sampleRate}Hz, 총 오디오 버퍼 조각 갯수: ${totalSampleCount}`);
