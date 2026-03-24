@@ -47,16 +47,17 @@ describe('JapaneseAnalyzer', () => {
     ]);
   });
 
-  test('should handle Sokuon (double consonants)', () => {
+  test('should handle Sokuon (double consonants) as individual unmapped character', () => {
     const result = analyzer.analyze('まって');
     expect(result).toEqual([
       [
         { phoneme: 'm', mergeWithNext: true },
         { phoneme: 'a', mergeWithNext: false }
       ],
-      [],
       [
-        { phoneme: 't', mergeWithNext: true },
+        { phoneme: 'っ', mergeWithNext: false }
+      ],
+      [
         { phoneme: 't', mergeWithNext: true },
         { phoneme: 'e', mergeWithNext: false }
       ]
@@ -73,14 +74,16 @@ describe('JapaneseAnalyzer', () => {
     ]);
   });
 
-  test('should skip Choonpu (long vowel mark)', () => {
+  test('should handle Choonpu (long vowel mark) as individual unmapped character', () => {
     const result = analyzer.analyze('ター');
     expect(result).toEqual([
       [
         { phoneme: 't', mergeWithNext: true },
         { phoneme: 'a', mergeWithNext: false }
       ],
-      []
+      [
+        { phoneme: 'ー', mergeWithNext: false }
+      ]
     ]);
   });
 });

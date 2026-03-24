@@ -181,6 +181,44 @@ Analyzers separate text into the smallest phoneme structures tailored to the spe
 - `EnglishAnalyzer`: Separates English text into alphabets ignoring case, and filters unsupported special characters.
 - `JapaneseAnalyzer`: Analyzes hiragana and katakana and separates them into individual phonemes.
 
+### Creating Custom Analyzers
+You can easily create your own custom language analyzer by extending the exported base classes: `DecomposingAnalyzer` or `DictionaryAnalyzer`.
+
+#### Using DecomposingAnalyzer (Character-by-character)
+Ideal for languages where characters decompose mathematically into phonemes (like Korean).
+```typescript
+import { DecomposingAnalyzer, PhonemeToken } from 'animalese-tts';
+
+export class MyCustomAnalyzer extends DecomposingAnalyzer {
+  protected decompose(char: string): PhonemeToken[] {
+    // Custom logic to convert a single character to phonemes
+    return [{ phoneme: char.toLowerCase(), mergeWithNext: false }];
+  }
+}
+```
+
+#### Using DictionaryAnalyzer (Mapping-based)
+Ideal for languages where specific character sequences map directly to phoneme arrays (like Japanese). 
+When defining the array, each string element becomes a distinct phoneme block. 
+For example, `['tai']` is played as a single continuous piece (combining t, a, i at once like one letter), while `['ta', 'i']` plays as two separate pieces merged together (ta + i) and pronounced as two letters.
+
+```typescript
+import { DictionaryAnalyzer, PhonemeToken } from 'animalese-tts';
+
+export class MyMappedAnalyzer extends DictionaryAnalyzer {
+  protected dictionary: Record<string, string[]> = {
+    // Single character pronunciation
+    'あ': ['a'],
+    // Combined pronunciation as one block
+    'きゃ': ['kya'], 
+    // Two distinct pronunciations merged together
+    '大': ['ta', 'i'], 
+  };
+  
+  // You can optionally override `analyze` to add complex language-specific rules (like sokuon)
+}
+```
+
 ### Samplers
 Samplers fetch and cache actual `.wav` audio samples corresponding to the analyzed phonemes.
 - `FileSystemSampler`: **Node.js only.** Reads audio files from a local directory (`samplesDirectory`).

@@ -15,12 +15,15 @@ export type TTSSpeakerEvents = {
 export class TTSSpeaker {
   private listeners: { [K in keyof TTSSpeakerEvents]?: TTSSpeakerEventCallback<K>[] } = {}
   private isLoaded: boolean = false
+  private readonly punctuations: string[]
 
   constructor(
     private readonly text: string,
     private readonly asInt16: boolean,
     private readonly config: AnimalVoiceConfig
-  ) { }
+  ) {
+    this.punctuations = this.config.punctuations || ['.', ',', '!', '?', "'", '"', '(', ')', '~', '。', '、', '！', '？', 'っ', 'ッ', 'ー']
+  }
 
   public on<K extends keyof TTSSpeakerEvents>(event: K, callback: TTSSpeakerEventCallback<K>): void {
     if (!this.listeners[event]) {
@@ -53,8 +56,7 @@ export class TTSSpeaker {
 
     for (const token of allTokens) {
       const isSpace = token === ' ' || token === '　'
-      const punctuations = this.config.punctuations || ['.', ',', '!', '?', "'", '"', '(', ')', '~', '。', '、', '！', '？']
-      const isPunctuation = punctuations.includes(token)
+      const isPunctuation = this.punctuations.includes(token)
 
       if (!isSpace && !isPunctuation) {
         if (!this.config.sampler.isCached(token)) {
@@ -123,8 +125,7 @@ export class TTSSpeaker {
         if (!token.phoneme) continue
 
         const isSpace = token.phoneme === ' ' || token.phoneme === '　'
-        const punctuations = this.config.punctuations || ['.', ',', '!', '?', "'", '"', '(', ')', '~', '。', '、', '！', '？']
-        const isPunctuation = punctuations.includes(token.phoneme)
+        const isPunctuation = this.punctuations.includes(token.phoneme)
 
         if (isPunctuation) {
           charIndex = 0
@@ -152,6 +153,8 @@ export class TTSSpeaker {
             }
           }
           continue
+        } else if (isSpace) {
+          continue
         }
 
         if (isPunctuation && this.config.punctuationDelay) {
@@ -172,6 +175,8 @@ export class TTSSpeaker {
               buffer: this.asInt16 ? AudioConverter.float32ToInt16(emptyBuffer) : emptyBuffer
             }
           }
+          continue
+        } else if (isPunctuation) {
           continue
         }
 
