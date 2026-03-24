@@ -1,9 +1,9 @@
-import type { PlaybackStrategy } from '../interfaces'
+import type { AudioPlaybackStrategy } from '../interfaces'
 
 /**
  * Playback strategy for browser environments using the Web Audio API.
  */
-export class WebPlayer implements PlaybackStrategy {
+export class WebPlayer implements AudioPlaybackStrategy {
   public volume: number = 1.0
   private audioContext: AudioContext
   private sampleRate: number

@@ -1,14 +1,14 @@
-import type { PlaybackStrategy } from '../interfaces'
+import type { FilePlaybackStrategy } from '../interfaces'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import * as crypto from 'node:crypto'
 
 /**
  * Playback strategy for Node.js environments.
  * Encodes the audio buffer into a WAV file and saves it to the disk.
  */
-export class FilePlayer implements PlaybackStrategy {
+export class FilePlayer implements FilePlaybackStrategy {
   public volume: number = 1.0
-  private outputIndex = 0
   private sampleRate: number
 
   constructor(sampleRate: number) {
@@ -18,20 +18,23 @@ export class FilePlayer implements PlaybackStrategy {
   /**
    * Encodes and writes the provided audio buffer to a local .wav file.
    * @param bufferData The audio data to save.
+   * @param outputDir The directory to save the file in.
    */
-  public async play(bufferData: Float32Array): Promise<void> {
+  public async play(bufferData: Float32Array, outputDir: string): Promise<string> {
     const wavBuffer = this.encodeWAV(bufferData, this.sampleRate)
 
-    this.outputIndex++
-    const filename = path.resolve(process.cwd(), `output_${this.outputIndex}.wav`)
-    await fs.promises.writeFile(filename, wavBuffer)
+    const randomFilename = `${crypto.randomUUID()}.wav`
+    const filepath = path.join(outputDir, randomFilename)
+    await fs.promises.writeFile(filepath, wavBuffer)
+    return filepath
   }
 
   /**
    * Merges multiple audio buffers into one and plays the result.
    * @param buffers Array of Float32Array audio chunks.
+   * @param outputDir The directory to save the file in.
    */
-  public async drainAndPlay(buffers: Float32Array[]): Promise<void> {
+  public async drainAndPlay(buffers: Float32Array[], outputDir: string): Promise<string> {
     const totalLength = buffers.reduce((sum, b) => sum + b.length, 0)
     const merged = new Float32Array(totalLength)
     let offset = 0
@@ -39,7 +42,7 @@ export class FilePlayer implements PlaybackStrategy {
       merged.set(buf, offset)
       offset += buf.length
     }
-    return this.play(merged)
+    return this.play(merged, outputDir)
   }
 
   private encodeWAV(samples: Float32Array, sampleRate: number): Buffer {

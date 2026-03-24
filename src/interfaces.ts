@@ -38,8 +38,16 @@ export interface AudioEffect {
  */
 export interface PlaybackStrategy {
   volume: number
+}
+
+export interface AudioPlaybackStrategy extends PlaybackStrategy {
   play(buffer: Float32Array): Promise<void>
   drainAndPlay(buffers: Float32Array[]): Promise<void>
+}
+
+export interface FilePlaybackStrategy extends PlaybackStrategy {
+  play(buffer: Float32Array, outputDir: string): Promise<string>
+  drainAndPlay(buffers: Float32Array[], outputDir: string): Promise<string>
 }
 
 /**

@@ -117,7 +117,7 @@ async function speak(text: string) {
   
   for await (const output of speaker.speak()) {
     // FilePlayer exports the buffer to a temporary or specified .wav file/stream
-    await player.play(output.buffer)
+    await player.play(output.buffer, './output_folder')
   }
 }
 

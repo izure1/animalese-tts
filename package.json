@@ -1,7 +1,15 @@
 {
   "name": "animalese-tts",
-  "version": "1.0.2",
-  "description": "Animalese TTS Implementation",
+  "version": "1.0.3",
+  "description": "Animalese TTS is an Animal Crossing style Voice Synthesis (TTS) engine.",
+  "keywords": [
+    "animalese",
+    "tts",
+    "voice",
+    "synthesis",
+    "animal-crossing",
+    "text-to-speech"
+  ],
   "main": "dist/animalese.node.cjs",
   "module": "dist/animalese.browser.mjs",
   "browser": "dist/animalese.browser.mjs",

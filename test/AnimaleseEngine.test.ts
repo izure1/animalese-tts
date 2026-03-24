@@ -2,12 +2,12 @@ import { AnimaleseEngine, AnimalVoiceConfig } from '../src/AnimaleseEngine'
 import { KoreanAnalyzer } from '../src/analyzers/KoreanAnalyzer'
 import { MemorySampler } from '../src/core/MemorySampler'
 import { PitchManager } from '../src/effects/PitchManager'
-import { PlaybackStrategy } from '../src/interfaces'
+import { AudioPlaybackStrategy } from '../src/interfaces'
 
 describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
   let engine: AnimaleseEngine
   let sampler: MemorySampler
-  let mockStrategy: PlaybackStrategy
+  let mockStrategy: AudioPlaybackStrategy
 
   beforeEach(() => {
     mockStrategy = {
@@ -50,7 +50,7 @@ import { EnglishAnalyzer } from '../src/analyzers/EnglishAnalyzer'
 describe('AnimaleseEngine (EnglishAnalyzer)', () => {
   let engine: AnimaleseEngine
   let sampler: MemorySampler
-  let mockStrategy: PlaybackStrategy
+  let mockStrategy: AudioPlaybackStrategy
 
   beforeEach(() => {
     mockStrategy = {
