@@ -20,9 +20,14 @@ export class TTSSpeaker {
   constructor(
     private readonly text: string,
     private readonly asInt16: boolean,
-    private readonly config: AnimalVoiceConfig
+    private config: AnimalVoiceConfig
   ) {
     this.punctuations = this.config.punctuations || ['.', ',', '!', '?', "'", '"', '(', ')', '~', '。', '、', '！', '？', 'っ', 'ッ', 'ー']
+    this.config = {
+      ...this.config,
+      spaceDelay: this.config.spaceDelay ?? 0.1,
+      punctuationDelay: this.config.punctuationDelay ?? 0.3,
+    }
   }
 
   public on<K extends keyof TTSSpeakerEvents>(event: K, callback: TTSSpeakerEventCallback<K>): void {

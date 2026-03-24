@@ -51,7 +51,7 @@ import {
   WebPlayer
 } from 'https://cdn.jsdelivr.net/npm/animalese-tts/+esm'
 
-const sampleRate = 44100
+const sampleRate = 48000
 // The URL where your .wav samples are hosted
 const baseUrl = 'https://your-server.com/samples'
 
@@ -94,7 +94,7 @@ import {
   FilePlayer
 } from 'animalese-tts'
 
-const sampleRate = 44100
+const sampleRate = 48000
 const samplesDirectory = './samples'
 
 const player = new FilePlayer(sampleRate)
@@ -131,8 +131,8 @@ speak("안녕하세요! Node.js에서의 목소리 테스트입니다.")
 | `analyzer` | `TextAnalyzer` | (Required) | Separates text into phonemes. You can select language-specific analyzers. |
 | `sampler` | `Sampler` | (Required) | Supplies the original audio sample data corresponding to the phonemes. |
 | `effect` | `AudioEffect` | (Required) | Handles pitch modulation and speed control effects. (Usually `PitchManager` is used) |
-| `spaceDelay` | `number` | `0` | Silence delay inserted upon recognizing a space character (` `) (seconds). |
-| `punctuationDelay` | `number` | `0` | Silence delay inserted upon recognizing punctuation (seconds). |
+| `spaceDelay` | `number` | `0.1` | Silence delay inserted upon recognizing a space character (` `) (seconds). |
+| `punctuationDelay` | `number` | `0.3` | Silence delay inserted upon recognizing punctuation (seconds). |
 | `punctuations` | `string[]` | (Default set) | Array of characters to be considered as punctuation marks. |
 
 ### Sampler Parameter Options (`SamplerOptions`)
