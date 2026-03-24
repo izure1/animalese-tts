@@ -25,7 +25,7 @@ export class TTSSpeaker {
     this.punctuations = this.config.punctuations || ['.', ',', '!', '?', "'", '"', '(', ')', '~', '。', '、', '！', '？', 'っ', 'ッ', 'ー']
     this.config = {
       ...this.config,
-      spaceDelay: this.config.spaceDelay ?? 0.1,
+      spaceDelay: this.config.spaceDelay ?? 0.03,
       punctuationDelay: this.config.punctuationDelay ?? 0.3,
     }
   }
