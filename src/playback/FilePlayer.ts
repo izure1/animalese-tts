@@ -6,7 +6,8 @@ import * as path from 'node:path'
  * Playback strategy for Node.js environments.
  * Encodes the audio buffer into a WAV file and saves it to the disk.
  */
-export class NodePlayer implements PlaybackStrategy {
+export class FilePlayer implements PlaybackStrategy {
+  public volume: number = 1.0
   private outputIndex = 0
   private sampleRate: number
 
@@ -61,7 +62,8 @@ export class NodePlayer implements PlaybackStrategy {
 
     let offset = 44
     for (let i = 0, len = samples.length; i < len; i++) {
-      const s = Math.max(-1, Math.min(1, samples[i]))
+      let s = samples[i] * this.volume
+      s = Math.max(-1, Math.min(1, s))
       view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true)
       offset += 2
     }

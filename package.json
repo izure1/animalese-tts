@@ -1,6 +1,6 @@
 {
   "name": "animalese-tts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Animalese TTS Implementation",
   "main": "dist/animalese.node.cjs",
   "module": "dist/animalese.browser.mjs",

@@ -3,7 +3,8 @@ import type { PlaybackStrategy } from '../interfaces'
 /**
  * Playback strategy for browser environments using the Web Audio API.
  */
-export class BrowserPlayer implements PlaybackStrategy {
+export class WebPlayer implements PlaybackStrategy {
+  public volume: number = 1.0
   private audioContext: AudioContext
   private sampleRate: number
 
@@ -28,7 +29,12 @@ export class BrowserPlayer implements PlaybackStrategy {
     const sourceNode = this.audioContext.createBufferSource()
     sourceNode.buffer = audioBuffer
     sourceNode.playbackRate.value = 1.0
-    sourceNode.connect(this.audioContext.destination)
+
+    const gainNode = this.audioContext.createGain()
+    gainNode.gain.value = this.volume
+
+    sourceNode.connect(gainNode)
+    gainNode.connect(this.audioContext.destination)
 
     return new Promise((resolve) => {
       sourceNode.onended = () => resolve()

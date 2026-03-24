@@ -37,6 +37,7 @@ export interface AudioEffect {
  * Interface for playing synthesized audio buffers.
  */
 export interface PlaybackStrategy {
+  volume: number
   play(buffer: Float32Array): Promise<void>
   drainAndPlay(buffers: Float32Array[]): Promise<void>
 }

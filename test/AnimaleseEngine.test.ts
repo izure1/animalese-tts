@@ -11,6 +11,7 @@ describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
 
   beforeEach(() => {
     mockStrategy = {
+      volume: 1,
       play: jest.fn().mockResolvedValue(undefined),
       drainAndPlay: jest.fn().mockResolvedValue(undefined)
     }
@@ -53,6 +54,7 @@ describe('AnimaleseEngine (EnglishAnalyzer)', () => {
 
   beforeEach(() => {
     mockStrategy = {
+      volume: 1,
       play: jest.fn().mockResolvedValue(undefined),
       drainAndPlay: jest.fn().mockResolvedValue(undefined)
     }

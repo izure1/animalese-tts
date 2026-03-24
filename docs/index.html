@@ -12,13 +12,24 @@
       padding: 2rem;
     }
 
-    .container {
-      max-width: 600px;
+    .layout-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 20px;
+      flex-wrap: wrap;
+      max-width: 1200px;
       margin: 0 auto;
+    }
+
+    .container {
+      flex: 1;
+      min-width: 320px;
       background: #333;
       padding: 2rem;
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      box-sizing: border-box;
     }
 
     h1 {
@@ -85,7 +96,7 @@
       JapaneseAnalyzer,
       WebSampler,
       PitchManager,
-      BrowserPlayer
+      WebPlayer
     } from './animalese.browser.mjs';
 
     const playBtn = document.getElementById('playBtn');
@@ -94,7 +105,7 @@
     let sampleRate = 48000;
     let baseUrl = './sounds';
 
-    const player = new BrowserPlayer(sampleRate);
+    const player = new WebPlayer(sampleRate)
 
     // WebSampleProvider preload using a known list or let it block dynamically
     // For this demo, WebSampleProvider will fetch dynamically on-the-fly.
@@ -103,6 +114,86 @@
       logEl.innerHTML += `<div>${msg}</div>`;
       logEl.scrollTop = logEl.scrollHeight;
     }
+
+    const langSelect = document.getElementById('lang');
+    const textInput = document.getElementById('text');
+
+    const defaultTexts = {
+      ko: '꺄아~! 완전 대박! 나 방금 새로운 댄스 스텝을 연습 중이었어! 나중에 내가 우주 대스타가 되면 지금 이 사인, 엄청 귀해질걸? 미리미리 받아두는 게 좋을 거야, 반짝!',
+      en: 'Wow! Totally awesome! I was just practicing a new dance step! When I become a huge universe star later, this signature right now will be super precious, you know? It\'ll be good to get it in advance, sparkle!',
+      ja: 'キャー！ちょうヤバい！わたし、さっきあたらしいダンスステップをれんしゅうしてたの！あとでわたしがうちゅうのだいスターになったら、いまのこのサイン、めっちゃきちょうになるかもよ？はやめにもらっておいたほうがいいよ、キラッ！'
+    };
+
+    const i18n = {
+      ko: {
+        title: '🗣️ Animalese TTS',
+        textLabel: '텍스트 문장',
+        settingsSummary: '⚙️ 추가 설정',
+        langLabel: '언어',
+        pitchLabel: 'Pitch 배율 (기본 1.5배)',
+        speedLabel: 'Speed 배율 (기본 4.0배)',
+        randomnessLabel: 'Randomness (피치 변동폭, 기본 0.1)',
+        melodyRateLabel: 'Melody Rate (음률 속도, 기본 0.05)',
+        melodyAmplitudeLabel: 'Melody Amplitude (음률 진폭, 기본 0.1)',
+        spaceDelayLabel: '띄어쓰기 대기 시간 (초, 기본 0.03)',
+        punctuationDelayLabel: '마침표/특수기호 대기 시간 (초, 기본 0.3)',
+        maxRetriesLabel: '없는 음소 재시도 제한 횟수 (기본 3번)',
+        punctuationsLabel: '대기할 특수기호 목록 (문자열 나열, 기본: .,!?"~。、！？)',
+        volumeLabel: '볼륨 (기본 1.0)',
+        playBtnLabel: '▶️ 브라우저에서 직접 합성 및 재생',
+        logInfo: '안내: 버튼을 누르면 클라이언트 단에서 합성을 진행하고 재생합니다.'
+      },
+      en: {
+        title: '🗣️ Animalese TTS',
+        textLabel: 'Text Sentence',
+        settingsSummary: '⚙️ Additional Settings',
+        langLabel: 'Language',
+        pitchLabel: 'Pitch Multiplier (Default 1.5x)',
+        speedLabel: 'Speed Multiplier (Default 4.0x)',
+        randomnessLabel: 'Randomness (Pitch variance, Default 0.1)',
+        melodyRateLabel: 'Melody Rate (Default 0.05)',
+        melodyAmplitudeLabel: 'Melody Amplitude (Default 0.1)',
+        spaceDelayLabel: 'Space Delay (Seconds, Default 0.03)',
+        punctuationDelayLabel: 'Punctuation Delay (Seconds, Default 0.3)',
+        maxRetriesLabel: 'Missing Phoneme Retry Limit (Default 3)',
+        punctuationsLabel: 'Punctuations to wait for (Chars, Default: .,!?"~。、！？)',
+        volumeLabel: 'Volume (Default 1.0)',
+        playBtnLabel: '▶️ Synthesize and Play Directly in Browser',
+        logInfo: 'Info: Click the button to synthesize and play audio on the client side.'
+      },
+      ja: {
+        title: '🗣️ Animalese TTS',
+        textLabel: 'テキスト文章',
+        settingsSummary: '⚙️ 追加設定',
+        langLabel: '言語',
+        pitchLabel: 'ピッチ倍率（デフォルト1.5倍）',
+        speedLabel: 'スピード倍率（デフォルト4.0倍）',
+        randomnessLabel: 'ランダムネス（ピッチ変動幅、デフォルト0.1）',
+        melodyRateLabel: 'メロディーレート（音律速度、デフォルト0.05）',
+        melodyAmplitudeLabel: 'メロディー振幅（デフォルト0.1）',
+        spaceDelayLabel: 'スペース待機時間（秒、デフォルト0.03）',
+        punctuationDelayLabel: '句読点/記号待機時間（秒、デフォルト0.3）',
+        maxRetriesLabel: '見つからない音素の再試行制限（デフォルト3回）',
+        punctuationsLabel: '待機する記号のリスト（文字列、デフォルト: .,!?"~。、！？）',
+        volumeLabel: '音量（デフォルト1.0）',
+        playBtnLabel: '▶️ ブラウザで直接合成と再生',
+        logInfo: '案内: ボタンを押すとクライアント側で合成を実行して再生します。'
+      }
+    };
+
+    function updateLanguageUI(lang) {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang] && i18n[lang][key]) {
+          el.innerText = i18n[lang][key];
+        }
+      });
+      textInput.value = defaultTexts[lang] || defaultTexts.ko;
+    }
+
+    langSelect.addEventListener('change', (e) => {
+      updateLanguageUI(e.target.value);
+    });
 
     playBtn.addEventListener('click', async () => {
       const text = document.getElementById('text').value;
@@ -115,6 +206,8 @@
       const spaceDelay = parseFloat(document.getElementById('spaceDelay').value);
       const punctuationDelay = parseFloat(document.getElementById('punctuationDelay').value);
       const maxRetries = parseInt(document.getElementById('maxRetries').value, 10);
+      const volume = parseFloat(document.getElementById('volume').value)
+      player.volume = volume
 
       const punctuationsStr = document.getElementById('punctuations').value;
       const punctuations = punctuationsStr ? punctuationsStr.split('') : undefined;
@@ -187,58 +280,101 @@
 </head>
 
 <body>
-  <div class="container">
-    <h1>🗣️ Animalese TTS</h1>
+  <div class="layout-wrapper">
+    <div class="container main-card" style="max-width: 600px;">
+      <h1 data-i18n="title">🗣️ Animalese TTS</h1>
 
-    <label>텍스트 문장</label>
-    <textarea id="text"
-      rows="4">꺄아~! 완전 대박! 나 방금 새로운 댄스 스텝을 연습 중이었어! 나중에 내가 우주 대스타가 되면 지금 이 사인, 엄청 귀해질걸? 미리미리 받아두는 게 좋을 거야, 반짝!</textarea>
+      <label data-i18n="textLabel">텍스트 문장</label>
+      <textarea id="text"
+        rows="4">꺄아~! 완전 대박! 나 방금 새로운 댄스 스텝을 연습 중이었어! 나중에 내가 우주 대스타가 되면 지금 이 사인, 엄청 귀해질걸? 미리미리 받아두는 게 좋을 거야, 반짝!</textarea>
 
-    <details
-      style="margin-top: 1rem; border: 1px solid #4c566a; border-radius: 5px; padding: 10px; margin-bottom: 20px;">
-      <summary style="cursor: pointer; font-weight: bold; padding: 5px; outline: none;">⚙️ 추가 설정 (클릭하여 열기)</summary>
-      <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
-        <label>언어</label>
+      <button id="playBtn" data-i18n="playBtnLabel" style="margin-top: 2rem;">▶️ 브라우저에서 직접 합성 및 재생</button>
+      <div id="typedTextContainer"
+        style="font-size: 1rem; font-weight: bold; color: #ebcb8b; margin-top: 1rem; min-height: 3rem; word-break: break-all;">
+      </div>
+      <div id="log" data-i18n="logInfo">안내: 버튼을 누르면 클라이언트 단에서 합성을 진행하고 재생합니다.</div>
+    </div>
+
+    <!-- 추가 설정 카드 -->
+    <div class="container settings-card" style="max-width: 400px; padding: 1.5rem;">
+      <div data-i18n="settingsSummary"
+        style="font-weight: bold; font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px solid #4c566a; padding-bottom: 10px;">
+        ⚙️ 추가 설정</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label data-i18n="langLabel">언어</label>
         <select id="lang">
           <option value="ko">한국어 (Korean)</option>
           <option value="en">영어 (English)</option>
           <option value="ja">일본어 (Japanese)</option>
         </select>
 
-        <label>Pitch 배율 (기본 1.5배)</label>
-        <input type="number" id="pitch" value="1.5" step="0.1" min="0.5" max="3.0" />
+        <label data-i18n="pitchLabel">Pitch 배율 (기본 1.5배)</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+          <input type="range" id="pitch" value="1.5" step="0.1" min="0.5" max="3.0"
+            oninput="this.nextElementSibling.innerText = this.value" style="margin-bottom: 0;" />
+          <span style="min-width: 40px; text-align: right;">1.5</span>
+        </div>
 
-        <label>Speed 배율 (기본 4.0배)</label>
-        <input type="number" id="speed" value="4.0" step="0.1" min="0.5" max="5.0" />
+        <label data-i18n="speedLabel">Speed 배율 (기본 4.0배)</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+          <input type="range" id="speed" value="4.0" step="0.1" min="0.5" max="5.0"
+            oninput="this.nextElementSibling.innerText = this.value" style="margin-bottom: 0;" />
+          <span style="min-width: 40px; text-align: right;">4.0</span>
+        </div>
 
-        <label>Randomness (피치 변동폭, 기본 0.1)</label>
-        <input type="number" id="randomness" value="0.1" step="0.1" min="0" max="1.0" />
+        <label data-i18n="randomnessLabel">Randomness (피치 변동폭, 기본 0.1)</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+          <input type="range" id="randomness" value="0.1" step="0.1" min="0" max="1.0"
+            oninput="this.nextElementSibling.innerText = this.value" style="margin-bottom: 0;" />
+          <span style="min-width: 40px; text-align: right;">0.1</span>
+        </div>
 
-        <label>Melody Rate (음률 속도, 기본 0.05)</label>
-        <input type="number" id="melodyRate" value="0.05" step="0.01" min="0" max="1.0" />
+        <label data-i18n="melodyRateLabel">Melody Rate (음률 속도, 기본 0.05)</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+          <input type="range" id="melodyRate" value="0.05" step="0.01" min="0" max="1.0"
+            oninput="this.nextElementSibling.innerText = this.value" style="margin-bottom: 0;" />
+          <span style="min-width: 40px; text-align: right;">0.05</span>
+        </div>
 
-        <label>Melody Amplitude (음률 진폭, 기본 0.1)</label>
-        <input type="number" id="melodyAmplitude" value="0.1" step="0.01" min="0" max="1.0" />
+        <label data-i18n="melodyAmplitudeLabel">Melody Amplitude (음률 진폭, 기본 0.1)</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+          <input type="range" id="melodyAmplitude" value="0.1" step="0.01" min="0" max="1.0"
+            oninput="this.nextElementSibling.innerText = this.value" style="margin-bottom: 0;" />
+          <span style="min-width: 40px; text-align: right;">0.1</span>
+        </div>
 
-        <label>띄어쓰기 대기 시간 (초, 기본 0.03)</label>
-        <input type="number" id="spaceDelay" value="0.03" step="0.01" min="0" max="5.0" />
+        <label data-i18n="spaceDelayLabel">띄어쓰기 대기 시간 (초, 기본 0.03)</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+          <input type="range" id="spaceDelay" value="0.03" step="0.01" min="0" max="5.0"
+            oninput="this.nextElementSibling.innerText = this.value" style="margin-bottom: 0;" />
+          <span style="min-width: 40px; text-align: right;">0.03</span>
+        </div>
 
-        <label>마침표/특수기호 대기 시간 (초, 기본 0.3)</label>
-        <input type="number" id="punctuationDelay" value="0.3" step="0.1" min="0" max="5.0" />
+        <label data-i18n="punctuationDelayLabel">마침표/특수기호 대기 시간 (초, 기본 0.3)</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+          <input type="range" id="punctuationDelay" value="0.3" step="0.1" min="0" max="5.0"
+            oninput="this.nextElementSibling.innerText = this.value" style="margin-bottom: 0;" />
+          <span style="min-width: 40px; text-align: right;">0.3</span>
+        </div>
 
-        <label>없는 음소 재시도 제한 횟수 (기본 3번)</label>
-        <input type="number" id="maxRetries" value="3" step="1" min="0" max="100" />
+        <label data-i18n="maxRetriesLabel">없는 음소 재시도 제한 횟수 (기본 3번)</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+          <input type="range" id="maxRetries" value="3" step="1" min="0" max="100"
+            oninput="this.nextElementSibling.innerText = this.value" style="margin-bottom: 0;" />
+          <span style="min-width: 40px; text-align: right;">3</span>
+        </div>
 
-        <label>대기할 특수기호 목록 (문자열 나열, 기본: .,!?'"~。、！？)</label>
+        <label data-i18n="punctuationsLabel">대기할 특수기호 목록 (문자열 나열, 기본: .,!?'"~。、！？)</label>
         <input type="text" id="punctuations" value=".,!?'&quot;()~。、！？" />
-      </div>
-    </details>
 
-    <button id="playBtn">▶️ 브라우저에서 직접 합성 및 재생</button>
-    <div id="typedTextContainer"
-      style="font-size: 1rem; font-weight: bold; color: #ebcb8b; margin-top: 1rem; min-height: 3rem; word-break: break-all;">
+        <label data-i18n="volumeLabel">볼륨 (기본 1.0)</label>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
+          <input type="range" id="volume" value="1.0" step="0.1" min="0.0" max="2.0"
+            oninput="this.nextElementSibling.innerText = this.value" style="margin-bottom: 0;" />
+          <span style="min-width: 40px; text-align: right;">1.0</span>
+        </div>
+      </div>
     </div>
-    <div id="log">안내: 버튼을 누르면 클라이언트 단에서 합성을 진행하고 재생합니다.</div>
   </div>
 </body>
 
