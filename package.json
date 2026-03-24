@@ -22,7 +22,8 @@
       },
       "node": {
         "types": "./dist/types/index.node.d.ts",
-        "require": "./dist/animalese.node.cjs"
+        "require": "./dist/animalese.node.cjs",
+        "import": "./dist/animalese.node.cjs"
       },
       "default": {
         "types": "./dist/types/index.node.d.ts",
