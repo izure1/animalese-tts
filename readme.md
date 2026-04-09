@@ -59,10 +59,10 @@ const player = new WebPlayer(sampleRate)
 
 const engine = new AnimaleseEngine({
   analyzer: new KoreanAnalyzer(),
-  sampler: new WebSampler({
-    sampleRate,
-    baseUrl
-  }),
+  sampler: new WebSampler(
+    'https://your-server.com/sounds/sprite.wav', 
+    ['a', 'b', 'c'] // Auto-detect from labels, or use an explicit SpriteMap object
+  ),
   effect: new PitchManager({
     pitch: 1.5,
     speed: 4.0
@@ -95,15 +95,15 @@ import {
 } from 'animalese-tts'
 
 const sampleRate = 48000
-const samplesDirectory = './samples'
 
 const player = new FilePlayer(sampleRate)
 
 const engine = new AnimaleseEngine({
   analyzer: new KoreanAnalyzer(),
   sampler: new FileSystemSampler({
-    sampleRate,
-    samplesDirectory
+    sampleRate: 48000,
+    audioFilePath: './sounds/sprite.wav',
+    sprites: ['a', 'b', 'c'] // Or explicitly { 'a': { startMs, durationMs }, ... }
   }),
   effect: new PitchManager({
     pitch: 0.8,
@@ -139,31 +139,33 @@ speak("안녕하세요! Node.js에서의 목소리 테스트입니다.")
 
 - `sampleRate`: The sample rate of the original sample data in Hz. (e.g., 44100)
 - `maxRetries`: (Optional) Maximum number of retries when loading missing phoneme files.
+- `silenceThreshold`: (Optional) Amplitude threshold below which a buffer is considered silent (0.0~1.0). Used to detect and trim trailing/leading silence. (Default: 0.01)
 
 ### Environment-Specific Sampler Options
 
 Depending on the environment, you must use a specific `Sampler` implementation and provide its required property to locate the audio sample data:
 
 - **Node.js (`FileSystemSampler`)**: 
-  - `samplesDirectory`: The absolute or relative path to the local directory containing the `.wav` sample files.
+  Reads individual phoneme `.wav` files flatly placed in the `samplesDirectory`.
+  - `sampleRate`: Pre-defined sample rate to validate/resample correctly.
+  - `samplesDirectory`: Absolute or relative path to the local directory.
+
 - **Browser (`WebSampler`)**: 
-  - `baseUrl`: The URL path where the `.wav` sample files are hosted on the web server.
+  Loads a single audio sprite (`.wav`) and automatically slices it into individual phonemes.
+  - `audioSrc` (1st Arg): URL of the single sprite audio file.
+  - `sprites` (2nd Arg): Either an explicit `SpriteMap` (`{ startMs, durationMs }`) or a `string[]` of labels to auto-detect by slicing on silence.
 
 ### Phoneme Audio Data Structure
 
-The audio sample files must be provided as `.wav` format files. Each file must be named exactly after the corresponding phoneme analyzed by the `TextAnalyzer`. All files must be placed flatly within the `samplesDirectory` or `baseUrl` folder.
+**For `FileSystemSampler` (Node.js)**
+Each phoneme must exist as a separate `.wav` file within `samplesDirectory`. 
+For example, the KoreanAnalyzer requires `ㅇ.wav`, `ㅏ.wav`, `ㄴ.wav`, while English/Japanese require `a.wav`, `kya.wav`, etc.
 
-For example, if you are using the `KoreanAnalyzer`, the text is broken down into onset, nucleus, and coda (e.g., "안" -> `ㅇ`, `ㅏ`, `ㄴ`). Thus, your `samplesDirectory` or `baseUrl` directory should contain files named like:
-- `ㅇ.wav`
-- `ㅏ.wav`
-- `ㄴ.wav`
+**For `WebSampler` (Browser)**
+You provide a single sprite file (e.g., `sprite.wav`) containing all phoneme sounds played consecutively.
+You then map each slice to a phoneme using either an explicit `SpriteMap` or an ordered array of `string` labels.
 
-For English (`EnglishAnalyzer`) and Japanese (`JapaneseAnalyzer`), the text is converted internally into alphabetical phonemes (e.g., romaji or lowercase English). Thus, the required files are simply alphabetical:
-- `a.wav`
-- `b.wav`
-- `k.wav`
-
-> **Note**: If a corresponding phoneme audio file (`.wav`) is missing or fails to load from the `samplesDirectory` or `baseUrl`, that specific character will be treated as silence (muted) during synthesis.
+> **Note**: If a phoneme audio file or sprite map slice is missing, that specific character will be treated as silence during synthesis.
 
 ### PitchManager Parameter Options (`PitchManagerOptions`)
 

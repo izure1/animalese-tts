@@ -30,9 +30,9 @@ describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
   it('텍스트 변환, 피치 연산 및 모의 전략 재생 호출이 연계되어야 한다.', async () => {
     // mock Float32Array 샘플 로드
     const buffer = new Float32Array(8)
-    await sampler.loadSample('ㅏ', buffer, 44100)
-    await sampler.loadSample('ㄴ', buffer, 44100)
-    await sampler.loadSample('ㅕ', buffer, 44100)
+    await sampler.loadSample('ㅏ', buffer)
+    await sampler.loadSample('ㄴ', buffer)
+    await sampler.loadSample('ㅕ', buffer)
 
     // '안녕' -> 'ㅏ', 'ㄴ', 'ㄴ', 'ㅕ', 'ㅇ'(생략) -> '안', '녕' 각각 병합되어 총 2번의 오디오 재생이 유효함
     const speaker = engine.synthesize('안녕')
@@ -73,10 +73,10 @@ describe('AnimaleseEngine (EnglishAnalyzer)', () => {
   it('영문 텍스트는 대소문자 구분 없이 알파벳만 분리되어 재생되어야 한다.', async () => {
     // mock Float32Array 샘플 로드
     const buffer = new Float32Array(8)
-    await sampler.loadSample('h', buffer, 44100)
-    await sampler.loadSample('e', buffer, 44100)
-    await sampler.loadSample('l', buffer, 44100)
-    await sampler.loadSample('o', buffer, 44100)
+    await sampler.loadSample('h', buffer)
+    await sampler.loadSample('e', buffer)
+    await sampler.loadSample('l', buffer)
+    await sampler.loadSample('o', buffer)
 
     // 'Hello!!' -> 대문자 소문자화 -> 'h'+'e', 'l'+'l'+'o' (총 2그룹), '!'구두점 딜레이 2번 = 4번
     const speaker = engine.synthesize('Hello!!')

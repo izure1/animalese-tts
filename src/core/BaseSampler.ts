@@ -1,8 +1,10 @@
 import type { Sampler } from '../interfaces'
 
 export interface SamplerOptions {
-  sampleRate: number;
-  maxRetries?: number;
+  sampleRate?: number
+  maxRetries?: number
+  /** Amplitude threshold below which a sample is considered silent (0.0~1.0). Default: 0.01 */
+  silenceThreshold?: number
 }
 
 /**
@@ -16,12 +18,22 @@ export abstract class BaseSampler implements Sampler {
     return phoneme
   }
 
-  public readonly sampleRate: number;
-  public readonly maxRetries: number;
+  private _sampleRate: number | undefined
+  public readonly maxRetries: number
+  public readonly silenceThreshold: number
+
+  get sampleRate(): number | undefined {
+    return this._sampleRate
+  }
+
+  protected set sampleRate(v: number) {
+    this._sampleRate = v
+  }
 
   constructor(options: SamplerOptions) {
-    this.sampleRate = options.sampleRate;
-    this.maxRetries = options.maxRetries ?? 3;
+    this._sampleRate = options.sampleRate
+    this.maxRetries = options.maxRetries ?? 3
+    this.silenceThreshold = options.silenceThreshold ?? 0.01
   }
 
   public async getSample(phoneme: string): Promise<Float32Array | undefined> {
@@ -57,10 +69,7 @@ export abstract class BaseSampler implements Sampler {
 
   protected abstract fetchSample(phoneme: string): Promise<Float32Array | undefined>
 
-  public async loadSample(phoneme: string, buffer: Float32Array, sampleRate: number): Promise<void> {
-    if (sampleRate !== this.sampleRate) {
-      throw new Error(`[BaseSampler] 샘플레이트 불일치: 기대값 ${this.sampleRate}, 실제값 ${sampleRate}`)
-    }
+  public async loadSample(phoneme: string, buffer: Float32Array): Promise<void> {
     BaseSampler.globalCache.set(this.getCacheKey(phoneme), buffer)
   }
 
@@ -81,5 +90,37 @@ export abstract class BaseSampler implements Sampler {
     }
 
     return resampled
+  }
+
+  /**
+   * Trims leading and trailing silence from an audio buffer.
+   * Preserves a small fade margin (64 samples) to avoid clicks.
+   */
+  protected trimSilence(buffer: Float32Array): Float32Array {
+    if (buffer.length === 0) return buffer
+
+    const threshold = this.silenceThreshold
+    const fadeMargin = 64
+
+    let start = 0
+    for (let i = 0; i < buffer.length; i++) {
+      if (Math.abs(buffer[i]) > threshold) {
+        start = i
+        break
+      }
+    }
+
+    let end = buffer.length - 1
+    for (let i = buffer.length - 1; i >= start; i--) {
+      if (Math.abs(buffer[i]) > threshold) {
+        end = i
+        break
+      }
+    }
+
+    const trimStart = Math.max(0, start - fadeMargin)
+    const trimEnd = Math.min(buffer.length, end + fadeMargin + 1)
+
+    return buffer.slice(trimStart, trimEnd)
   }
 }

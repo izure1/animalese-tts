@@ -102,10 +102,10 @@
     const playBtn = document.getElementById('playBtn');
     const logEl = document.getElementById('log');
 
-    let sampleRate = 48000;
     let baseUrl = './sounds';
 
-    const player = new WebPlayer(sampleRate)
+    let sampleRate = 44100;
+    const player = new WebPlayer(sampleRate);
 
     // WebSampleProvider preload using a known list or let it block dynamically
     // For this demo, WebSampleProvider will fetch dynamically on-the-fly.
@@ -216,21 +216,29 @@
       playBtn.disabled = true;
 
       let analyzer;
+      let spriteWav;
+      let spriteJsonUrl;
+
       if (lang === 'en') {
         analyzer = new EnglishAnalyzer();
-        baseUrl = '/sounds/english';
+        spriteWav = './sounds/english-sprite.wav';
+        spriteJsonUrl = './sounds/english-sprite.json';
       } else if (lang === 'ja') {
         analyzer = new JapaneseAnalyzer();
-        baseUrl = '/sounds/japanese';
-        console.log(analyzer, baseUrl);
+        spriteWav = './sounds/japanese-sprite.wav';
+        spriteJsonUrl = './sounds/japanese-sprite.json';
       } else {
         analyzer = new KoreanAnalyzer();
-        baseUrl = '/sounds/korean';
+        spriteWav = './sounds/korean-sprite.wav';
+        spriteJsonUrl = './sounds/korean-sprite.json';
       }
+
+      log(`[Client] 스프라이트 데이터 로드 대기 중...`);
+      const spriteMap = await fetch(spriteJsonUrl).then(r => r.json());
 
       const config = {
         analyzer,
-        sampler: new WebSampler({ sampleRate, maxRetries, baseUrl }),
+        sampler: new WebSampler(spriteWav, spriteMap, { maxRetries }),
         effect: new PitchManager({ pitch, speed, randomness, melodyRate, melodyAmplitude }),
         spaceDelay,
         punctuationDelay,
@@ -265,10 +273,11 @@
           }
 
           // 청크 단위로 즉시 재생 대기
+          console.log(`[DEBUG] phoneme=${result.phoneme} bufLen=${chunk.length} pitch=${result.pitch.toFixed(3)} speed=${speed}`)
           await player.play(chunk);
         }
 
-        log(`[Client] 재생 성공! 샘플레이트: ${sampleRate}Hz, 총 오디오 버퍼 조각 갯수: ${totalSampleCount}`);
+        log(`[Client] 재생 완료! 총 오디오 버퍼 조각 갯수: ${totalSampleCount}`);
       } catch (err) {
         log(`[Error] 생성 실패: ${err.message}`);
         console.error(err);

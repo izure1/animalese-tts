@@ -8,7 +8,7 @@ export class WavDecoder {
    * @param buffer The input array buffer containing WAV data.
    * @returns An object containing the decoded Float32Array and sample rate.
    */
-  public decode(buffer: ArrayBuffer | Uint8Array): { buffer: Float32Array, sampleRate: number } {
+  public decode(buffer: ArrayBuffer | Uint8Array, trimSilence: boolean = true): { buffer: Float32Array, sampleRate: number } {
     let arrayBuffer = buffer instanceof Uint8Array ? buffer.buffer : buffer
     let byteOffset = buffer instanceof Uint8Array ? buffer.byteOffset : 0
     let byteLength = buffer.byteLength
@@ -65,7 +65,7 @@ export class WavDecoder {
     }
 
     return {
-      buffer: this.trimSilence(floatArray),
+      buffer: trimSilence ? this.trimSilence(floatArray) : floatArray,
       sampleRate
     }
   }
@@ -76,7 +76,7 @@ export class WavDecoder {
    * @param threshold The noise threshold below which samples are considered silent.
    * @returns The trimmed Float32Array.
    */
-  private trimSilence(buffer: Float32Array, threshold: number = 0.02): Float32Array {
+  public trimSilence(buffer: Float32Array, threshold: number = 0.02): Float32Array {
     let start = 0
     while (start < buffer.length && Math.abs(buffer[start]) <= threshold) {
       start++
