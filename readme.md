@@ -138,7 +138,7 @@ speak("안녕하세요! Node.js에서의 목소리 테스트입니다.")
 ### Sampler Parameter Options (`SamplerOptions`)
 
 - `sampleRate`: The sample rate of the original sample data in Hz. (e.g., 44100)
-- `maxRetries`: (Optional) Maximum number of retries when loading missing phoneme files.
+- `maxRetries`: (Optional) Maximum number of retries when loading the audio file.
 - `silenceThreshold`: (Optional) Amplitude threshold below which a buffer is considered silent (0.0~1.0). Used to detect and trim trailing/leading silence. (Default: 0.01)
 
 ### Environment-Specific Sampler Options
@@ -146,26 +146,26 @@ speak("안녕하세요! Node.js에서의 목소리 테스트입니다.")
 Depending on the environment, you must use a specific `Sampler` implementation and provide its required property to locate the audio sample data:
 
 - **Node.js (`FileSystemSampler`)**: 
-  Reads individual phoneme `.wav` files flatly placed in the `samplesDirectory`.
+  Loads a single audio sprite file (`.wav`) from the local file system and automatically slices it.
   - `sampleRate`: Pre-defined sample rate to validate/resample correctly.
-  - `samplesDirectory`: Absolute or relative path to the local directory.
+  - `audioFilePath`: Absolute or relative path to the local single audio sprite `.wav` file.
+  - `sprites`: Either an explicit `SpriteMap` (`{ startMs, durationMs }`) or a `string[]` of labels to auto-detect by slicing on silence.
+  - `minSilenceDurationMs`: (Optional) Minimum duration of silence in ms to split sprites in auto-detect mode. Increase this if certain sounds (like fricatives) are incorrectly split. (Default: 20)
 
 - **Browser (`WebSampler`)**: 
   Loads a single audio sprite (`.wav`) and automatically slices it into individual phonemes.
   - `audioSrc` (1st Arg): URL of the single sprite audio file.
   - `sprites` (2nd Arg): Either an explicit `SpriteMap` (`{ startMs, durationMs }`) or a `string[]` of labels to auto-detect by slicing on silence.
+  - `options` (3rd Arg): (Optional) Provide `{ maxRetries, silenceThreshold, minSilenceDurationMs }` to fine-tune fetching and auto-detection behavior.
 
 ### Phoneme Audio Data Structure
 
-**For `FileSystemSampler` (Node.js)**
-Each phoneme must exist as a separate `.wav` file within `samplesDirectory`. 
-For example, the KoreanAnalyzer requires `ㅇ.wav`, `ㅏ.wav`, `ㄴ.wav`, while English/Japanese require `a.wav`, `kya.wav`, etc.
-
-**For `WebSampler` (Browser)**
+**For both `FileSystemSampler` (Node.js) & `WebSampler` (Browser)**
 You provide a single sprite file (e.g., `sprite.wav`) containing all phoneme sounds played consecutively.
 You then map each slice to a phoneme using either an explicit `SpriteMap` or an ordered array of `string` labels.
+Both Node.js and Browser environments now share the exact same structure; only the source location (local file path vs HTTP URL) differs.
 
-> **Note**: If a phoneme audio file or sprite map slice is missing, that specific character will be treated as silence during synthesis.
+> **Note**: If the corresponding sprite map slice is missing or the phoneme is not mapped, that specific character will be treated as silence during synthesis.
 
 ### PitchManager Parameter Options (`PitchManagerOptions`)
 
