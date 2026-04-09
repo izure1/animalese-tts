@@ -45,7 +45,7 @@ In a browser environment, you use `WebSampler` to fetch samples via HTTP and `We
 ```typescript
 import {
   AnimaleseEngine,
-  KoreanAnalyzer,
+  EnglishAnalyzer,
   WebSampler,
   PitchManager,
   WebPlayer
@@ -55,10 +55,10 @@ const sampleRate = 48000
 const player = new WebPlayer(sampleRate)
 
 const engine = new AnimaleseEngine({
-  analyzer: new KoreanAnalyzer(),
+  analyzer: new EnglishAnalyzer(),
   sampler: new WebSampler(
     'https://your-server.com/sounds/sprite.wav', 
-    ['a', 'b', 'c'] // Auto-detect from labels, or use an explicit SpriteMap object
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'] // Auto-detect from labels, or use an explicit SpriteMap object
   ),
   effect: new PitchManager({
     pitch: 1.5,
@@ -76,7 +76,7 @@ async function speak(text: string) {
   }
 }
 
-speak("안녕하세요! 브라우저에서의 목소리 테스트입니다.")
+speak("Hello! This is a voice test in the browser.")
 ```
 
 ### Node.js Environment
@@ -100,7 +100,7 @@ const engine = new AnimaleseEngine({
   analyzer: new KoreanAnalyzer(),
   sampler: new FileSystemSampler({
     audioFilePath: './sounds/sprite.wav',
-    sprites: ['a', 'b', 'c'] // Or explicitly { 'a': { startMs, durationMs }, ... }
+    sprites: ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', ...] // Or explicitly { 'a': { startMs, durationMs }, ... }
   }),
   effect: new PitchManager({
     pitch: 0.8,
