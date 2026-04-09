@@ -101,7 +101,6 @@ const player = new FilePlayer(sampleRate)
 const engine = new AnimaleseEngine({
   analyzer: new KoreanAnalyzer(),
   sampler: new FileSystemSampler({
-    sampleRate: 48000,
     audioFilePath: './sounds/sprite.wav',
     sprites: ['a', 'b', 'c'] // Or explicitly { 'a': { startMs, durationMs }, ... }
   }),
@@ -147,7 +146,6 @@ Depending on the environment, you must use a specific `Sampler` implementation a
 
 - **Node.js (`FileSystemSampler`)**: 
   Loads a single audio sprite file (`.wav`) from the local file system and automatically slices it.
-  - `sampleRate`: Pre-defined sample rate to validate/resample correctly.
   - `audioFilePath`: Absolute or relative path to the local single audio sprite `.wav` file.
   - `sprites`: Either an explicit `SpriteMap` (`{ startMs, durationMs }`) or a `string[]` of labels to auto-detect by slicing on silence.
   - `minSilenceDurationMs`: (Optional) Minimum duration of silence in ms to split sprites in auto-detect mode. Increase this if certain sounds (like fricatives) are incorrectly split. (Default: 20)
@@ -169,9 +167,9 @@ Both Node.js and Browser environments now share the exact same structure; only t
 
 ### PitchManager Parameter Options (`PitchManagerOptions`)
 
-- `pitch`: The base tone of the voice. 1.0 is standard; higher is thinner, lower is deeper. 
-- `speed`: Speaking speed. Greater than 1.0 is faster, less than 1.0 is slower.
-- `randomness`: Amount of random pitch change applied to each character.
+- `pitch`: The base tone of the voice. Higher is thinner, lower is deeper. (Default: 1.5)
+- `speed`: Speaking speed. Greater than 1.0 is faster, less than 1.0 is slower. (Default: 4.0)
+- `randomness`: Amount of random pitch change applied to each character. (Default: 0.1)
 - `melodyRate`: The rate at which the melody changes. Higher values make the pitch rise and fall faster. (Default 0.05)
 - `melodyAmplitude`: The amplitude of the melody change. Higher values make the pitch difference more distinct. (Default 0.1)
 
