@@ -1,4 +1,5 @@
-import { WebSampler, SpriteMap } from '../src/core/WebSampler'
+import { WebSampler } from '../src/core/WebSampler'
+import type { SpriteMap } from '../src/core/BaseSampler'
 
 // fetch mock
 const mockFetch = jest.fn()

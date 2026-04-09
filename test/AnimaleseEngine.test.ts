@@ -16,7 +16,8 @@ describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
       drainAndPlay: jest.fn().mockResolvedValue(undefined)
     }
 
-    sampler = new MemorySampler({ sampleRate: 44100 })
+    sampler = new MemorySampler(new Uint8Array(0), [], {})
+    jest.spyOn(sampler as any, 'ensureInitialized').mockResolvedValue(undefined)
 
     const config: AnimalVoiceConfig = {
       analyzer: new KoreanAnalyzer(),
@@ -59,7 +60,8 @@ describe('AnimaleseEngine (EnglishAnalyzer)', () => {
       drainAndPlay: jest.fn().mockResolvedValue(undefined)
     }
 
-    sampler = new MemorySampler({ sampleRate: 44100 })
+    sampler = new MemorySampler(new Uint8Array(0), [], {})
+    jest.spyOn(sampler as any, 'ensureInitialized').mockResolvedValue(undefined)
 
     const config: AnimalVoiceConfig = {
       analyzer: new EnglishAnalyzer(), // 영문 분석기 주입

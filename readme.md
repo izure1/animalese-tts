@@ -98,10 +98,10 @@ const player = new FilePlayer(sampleRate)
 
 const engine = new AnimaleseEngine({
   analyzer: new KoreanAnalyzer(),
-  sampler: new FileSystemSampler({
-    audioFilePath: './sounds/sprite.wav',
-    sprites: ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', ...] // Or explicitly { 'a': { startMs, durationMs }, ... }
-  }),
+  sampler: new FileSystemSampler(
+    './sounds/sprite.wav',
+    ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', /* ... */] // Or explicitly { 'a': { startMs, durationMs }, ... }
+  ),
   effect: new PitchManager({
     pitch: 0.8,
     speed: 3.5,
@@ -145,9 +145,9 @@ Depending on the environment, you must use a specific `Sampler` implementation a
 
 - **Node.js (`FileSystemSampler`)**: 
   Loads a single audio sprite file (`.wav`) from the local file system and automatically slices it.
-  - `audioFilePath`: Absolute or relative path to the local single audio sprite `.wav` file.
-  - `sprites`: Either an explicit `SpriteMap` (`{ startMs, durationMs }`) or a `string[]` of labels to auto-detect by slicing on silence.
-  - `minSilenceDurationMs`: (Optional) Minimum duration of silence in ms to split sprites in auto-detect mode. Increase this if certain sounds (like fricatives) are incorrectly split. (Default: 20)
+  - `audioFilePath` (1st Arg): Absolute or relative path to the local single audio sprite `.wav` file.
+  - `sprites` (2nd Arg): Either an explicit `SpriteMap` (`{ startMs, durationMs }`) or a `string[]` of labels to auto-detect by slicing on silence.
+  - `options` (3rd Arg): (Optional) Provide `{ maxRetries, silenceThreshold, minSilenceDurationMs }` to fine-tune fetching and auto-detection behavior.
 
 - **Browser (`WebSampler`)**: 
   Loads a single audio sprite (`.wav`) and automatically slices it into individual phonemes.
