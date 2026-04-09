@@ -95,6 +95,7 @@
       EnglishAnalyzer,
       JapaneseAnalyzer,
       WebSampler,
+      MemorySampler,
       PitchManager,
       WebPlayer
     } from './animalese.browser.mjs';
@@ -238,7 +239,13 @@
 
       const config = {
         analyzer,
+        // WebSampler를 사용하는 기본 예제
         sampler: new WebSampler(spriteWav, spriteMap, { maxRetries }),
+        
+        // MemorySampler를 사용하는 경우의 예제:
+        // const arrayBuffer = await fetch(spriteWav).then(r => r.arrayBuffer());
+        // sampler: new MemorySampler(arrayBuffer, spriteMap, { maxRetries }),
+        
         effect: new PitchManager({ pitch, speed, randomness, melodyRate, melodyAmplitude }),
         spaceDelay,
         punctuationDelay,
