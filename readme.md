@@ -66,9 +66,10 @@ const engine = new AnimaleseEngine({
   })
 })
 
+await engine.load(speaker)
+
 async function speak(text: string) {
   const speaker = engine.synthesize(text)
-  await speaker.load()
   
   for await (const output of speaker.speak()) {
     await player.play(output.buffer)
@@ -107,9 +108,10 @@ const engine = new AnimaleseEngine({
   })
 })
 
+await engine.load(speaker)
+
 async function speak(text: string) {
   const speaker = engine.synthesize(text)
-  await speaker.load()
   
   for await (const output of speaker.speak()) {
     // FilePlayer exports the buffer to a temporary or specified .wav file/stream
@@ -217,9 +219,9 @@ export class MyMappedAnalyzer extends DictionaryAnalyzer {
 ```
 
 ### Samplers
-Samplers fetch and cache actual `.wav` audio samples corresponding to the analyzed phonemes.
-- `FileSystemSampler`: **Node.js only.** Reads audio files from a local directory (`samplesDirectory`).
-- `WebSampler`: **Browser only.** Fetches samples dynamically via HTTP requests from a remote server (`baseUrl`).
+Samplers load a single audio sprite file (`.wav`), decode it, and slice it into per-phoneme buffers.
+- `FileSystemSampler`: **Node.js only.** Reads a sprite `.wav` from the local file system.
+- `WebSampler`: **Browser only.** Fetches a sprite `.wav` via HTTP.
 - `MemorySampler`: Loads audio buffers directly into memory. Ideal for custom environments or testing.
 
 ### Playback Strategies (PlaybackStrategies)

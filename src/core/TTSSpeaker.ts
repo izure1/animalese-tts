@@ -2,19 +2,8 @@ import { AnimalVoiceConfig } from '../AnimaleseEngine'
 import { SynthesisOutput } from '../interfaces'
 import { AudioConverter } from './AudioConverter'
 
-export type TTSSpeakerEventCallback<K extends keyof TTSSpeakerEvents> = TTSSpeakerEvents[K]
-
-export type TTSSpeakerEvents = {
-  requested: (tokensToLoad: string[]) => void;
-  loading: (tokensToLoad: string[]) => void;
-  loaded: (token: string) => void;
-  completed: (loadedTokens: string[]) => void;
-  failed: (failedToken: string) => void;
-}
 
 export class TTSSpeaker {
-  private listeners: { [K in keyof TTSSpeakerEvents]?: TTSSpeakerEventCallback<K>[] } = {}
-  private isLoaded: boolean = false
   private readonly punctuations: string[]
 
   constructor(
@@ -30,77 +19,9 @@ export class TTSSpeaker {
     }
   }
 
-  public on<K extends keyof TTSSpeakerEvents>(event: K, callback: TTSSpeakerEventCallback<K>): void {
-    if (!this.listeners[event]) {
-      this.listeners[event] = []
-    }
-    this.listeners[event]!.push(callback)
-  }
-
-  private emit<K extends keyof TTSSpeakerEvents>(event: K, ...args: Parameters<TTSSpeakerEvents[K]>): void {
-    const callbacks = this.listeners[event]
-    if (callbacks) {
-      callbacks.forEach(cb => (cb as any)(...args))
-    }
-  }
-
-  public async load(): Promise<void> {
-    const tokenGroups = this.config.analyzer.analyze(this.text)
-    const uniqueTokens = new Set<string>()
-
-    for (const group of tokenGroups) {
-      for (const token of group) {
-        if (token.phoneme) {
-          uniqueTokens.add(token.phoneme)
-        }
-      }
-    }
-
-    const tokensToLoad: string[] = []
-    const allTokens = Array.from(uniqueTokens)
-
-    for (const token of allTokens) {
-      const isSpace = token === ' ' || token === '　'
-      const isPunctuation = this.punctuations.includes(token)
-
-      if (!isSpace && !isPunctuation) {
-        if (!this.config.sampler.isCached(token)) {
-          tokensToLoad.push(token)
-        }
-      }
-    }
-
-    this.emit('requested', tokensToLoad)
-
-    if (tokensToLoad.length > 0) {
-      this.emit('loading', tokensToLoad)
-    }
-
-    const loadedTokens: string[] = []
-
-    await Promise.all(tokensToLoad.map(async (token) => {
-      try {
-        const sample = await this.config.sampler.getSample(token)
-        if (sample) {
-          loadedTokens.push(token)
-          this.emit('loaded', token)
-        } else {
-          this.emit('failed', token)
-        }
-      } catch (error) {
-        this.emit('failed', token)
-      }
-    }))
-
-    this.isLoaded = true
-    this.emit('completed', loadedTokens)
-  }
+  // ── load() was removed. Use engine.load(speaker) before calling speak().
 
   public async *speak(): AsyncGenerator<SynthesisOutput, void, unknown> {
-    if (!this.isLoaded) {
-      throw new Error('[TTSSpeaker] load() must be called and awaited before calling speak()')
-    }
-
     const tokenGroups = this.config.analyzer.analyze(this.text)
     const chars = this.text.split('')
     let charIndex = 0

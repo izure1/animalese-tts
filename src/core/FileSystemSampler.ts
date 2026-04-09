@@ -36,6 +36,10 @@ export class FileSystemSampler extends BaseSampler {
     return `${this.audioFilePath}_${phoneme}`
   }
 
+  public async load(): Promise<void> {
+    await this.ensureInitialized()
+  }
+
   protected async fetchSample(phoneme: string): Promise<Float32Array | undefined> {
     await this.ensureInitialized()
     return BaseSampler.globalCache.get(this.getCacheKey(phoneme))

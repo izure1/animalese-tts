@@ -35,4 +35,13 @@ export class AnimaleseEngine {
   public synthesize(text: string, asInt16: boolean = false): TTSSpeaker {
     return new TTSSpeaker(text, asInt16, this.config)
   }
+
+  /**
+   * Loads the sampler (e.g. fetches and slices the audio sprite file).
+   * Must be called and awaited before calling speaker.speak().
+   * @param speaker The TTSSpeaker instance returned by synthesize().
+   */
+  public async load(_speaker: TTSSpeaker): Promise<void> {
+    return this.config.sampler.load()
+  }
 }

@@ -18,6 +18,7 @@ export interface TextAnalyzer {
  */
 export interface Sampler {
   sampleRate: number | undefined;
+  load(): Promise<void>
   getSample(phoneme: string): Promise<Float32Array | undefined>
   loadSample(phoneme: string, buffer: Float32Array): Promise<void>
   isCached(phoneme: string): boolean

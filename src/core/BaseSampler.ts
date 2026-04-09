@@ -69,6 +69,15 @@ export abstract class BaseSampler implements Sampler {
 
   protected abstract fetchSample(phoneme: string): Promise<Float32Array | undefined>
 
+  /**
+   * Initializes the sampler (e.g. fetches and slices a sprite file).
+   * Override in subclasses that require explicit initialization.
+   * Default implementation is a no-op.
+   */
+  public async load(): Promise<void> {
+    // no-op by default
+  }
+
   public async loadSample(phoneme: string, buffer: Float32Array): Promise<void> {
     BaseSampler.globalCache.set(this.getCacheKey(phoneme), buffer)
   }
