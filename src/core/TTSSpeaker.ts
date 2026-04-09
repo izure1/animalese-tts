@@ -141,8 +141,7 @@ export class TTSSpeaker {
 
         if (isSpace && this.config.spaceDelay) {
           const sr = this.config.sampler.sampleRate ?? 44100
-          const speed = this.config.effect.speed ?? 1.0
-          const delaySamples = Math.floor(this.config.spaceDelay * sr / speed)
+          const delaySamples = Math.floor(this.config.spaceDelay * sr)
           if (delaySamples > 0) {
             const emptyBuffer = new Float32Array(delaySamples)
             totalAudioSamples += delaySamples
@@ -166,8 +165,7 @@ export class TTSSpeaker {
 
         if (isPunctuation && this.config.punctuationDelay) {
           const sr = this.config.sampler.sampleRate ?? 44100
-          const speed = this.config.effect.speed ?? 1.0
-          const delaySamples = Math.floor(this.config.punctuationDelay * sr / speed)
+          const delaySamples = Math.floor(this.config.punctuationDelay * sr)
           if (delaySamples > 0) {
             const emptyBuffer = new Float32Array(delaySamples)
             totalAudioSamples += delaySamples
