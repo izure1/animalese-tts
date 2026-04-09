@@ -52,9 +52,6 @@ import {
 } from 'https://cdn.jsdelivr.net/npm/animalese-tts/+esm'
 
 const sampleRate = 48000
-// The URL where your .wav samples are hosted
-const baseUrl = 'https://your-server.com/samples'
-
 const player = new WebPlayer(sampleRate)
 
 const engine = new AnimaleseEngine({
@@ -65,7 +62,7 @@ const engine = new AnimaleseEngine({
   ),
   effect: new PitchManager({
     pitch: 1.5,
-    speed: 4.0
+    speed: 4.0,
   })
 })
 
@@ -106,7 +103,7 @@ const engine = new AnimaleseEngine({
   }),
   effect: new PitchManager({
     pitch: 0.8,
-    speed: 3.5
+    speed: 3.5,
   })
 })
 
