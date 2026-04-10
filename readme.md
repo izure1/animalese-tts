@@ -58,7 +58,8 @@ const engine = new AnimaleseEngine({
   analyzer: new EnglishAnalyzer(),
   sampler: new WebSampler(
     'https://your-server.com/sounds/sprite.wav', 
-    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'] // Auto-detect from labels, or use an explicit SpriteMap object
+    // Auto-slicing based on silence using string[] 
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'] 
   ),
   effect: new PitchManager({
     pitch: 1.5,
@@ -66,7 +67,8 @@ const engine = new AnimaleseEngine({
   })
 })
 
-await engine.load(speaker)
+// Wait for the engine to load (loads the sprite file, splits audio based on silence, and decodes it)
+await engine.load()
 
 async function speak(text: string) {
   const speaker = engine.synthesize(text)
@@ -100,7 +102,13 @@ const engine = new AnimaleseEngine({
   analyzer: new KoreanAnalyzer(),
   sampler: new FileSystemSampler(
     './sounds/sprite.wav',
-    ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', /* ... */] // Or explicitly { 'a': { startMs, durationMs }, ... }
+    // You can use an explicit SpriteMap object.
+    {
+      'ㄱ': { startMs: 0, durationMs: 100 },
+      'ㄲ': { startMs: 100, durationMs: 80 },
+      'ㄴ': { startMs: 180, durationMs: 95 },
+      // ...
+    }
   ),
   effect: new PitchManager({
     pitch: 0.8,
@@ -108,7 +116,7 @@ const engine = new AnimaleseEngine({
   })
 })
 
-await engine.load(speaker)
+await engine.load()
 
 async function speak(text: string) {
   const speaker = engine.synthesize(text)
@@ -133,60 +141,69 @@ speak("안녕하세요! Node.js에서의 목소리 테스트입니다.")
 | `punctuationDelay` | `number` | `0.3` | Silence delay inserted upon recognizing punctuation (seconds). |
 | `punctuations` | `string[]` | (Default set) | Array of characters to be considered as punctuation marks. |
 
-### Sampler Parameter Options (`SamplerOptions`)
+### Sampler Configuration Audio File and Sprite Options
 
-- `sprites` (2nd Arg): Either an explicit `SpriteMap` (`{ startMs, durationMs }`) or a `string[]` of labels to auto-detect by slicing on silence.
-- `options` (3rd Arg): (Optional) Provide `{ maxRetries, silenceThreshold, minSilenceDurationMs }` to fine-tune fetching and auto-detection behavior.
+> [!IMPORTANT]
+> For the default voice audio samples and SpriteMap sequence data, please refer [here (docs/sounds)](https://github.com/izure1/animalese-tts/tree/main/docs/sounds).
 
-- `sampleRate`: The sample rate of the original sample data in Hz. (e.g., 44100)
-- `maxRetries`: (Optional) Maximum number of retries when loading the audio file.
-- `silenceThreshold`: (Optional) Amplitude threshold below which a buffer is considered silent (0.0~1.0). Used to detect and trim trailing/leading silence. (Default: 0.01)
+The Sampler's role is to load a single large audio sprite (`sprite.wav`) and slice it into individual phoneme units. The common parameters injected when initializing `WebSampler`, `FileSystemSampler`, and `MemorySampler` are as follows:
 
-### Environment-Specific Sampler Options
+1. **Audio Original Source** (1st Arg):
+   - `WebSampler`: URL of the audio sprite file.
+   - `FileSystemSampler`: Path to the local audio sprite `.wav` file.
+   - `MemorySampler`: Memory buffer (`ArrayBuffer` / `Uint8Array`) containing the audio data.
 
-Depending on the environment, you must use a specific `Sampler` implementation and provide its required property to locate the audio sample data:
+2. **sprites** (2nd Arg):
+   Specifies how to slice the audio sprite and map it to each phoneme.
+   
+   - **Using a `SpriteMap` Object**:
+     Explicitly specifies the start time (`startMs`) and section length (`durationMs`) for each phoneme.
+     ```typescript
+     const sprites = {
+       'a': { startMs: 0, durationMs: 154 },
+       'b': { startMs: 154, durationMs: 130 },
+       'c': { startMs: 284, durationMs: 160 }
+       // ...
+     };
+     ```
+   
+   - **Using a `string[]` Array**:
+     Automatically splits the audio based on silence sections (auto-slicing), and automatically assigns them to phonemes in the order listed in the array.
+     ```typescript
+     const sprites = ['a', 'b', 'c', 'd', ...];
+     ```
+     - **How does it work?**: It reads the entire audio sprite, then finds all silence sections that meet the `silenceThreshold` (silence detection threshold) and `minSilenceDurationMs` (minimum duration recognized as silence) options. Then, using these found silence sections as boundaries, it splits the entire audio into multiple smaller audio clips.
+     - **Array Mapping**: These split audio clips are mapped 1:1 sequentially with the items specified in the array (e.g., `['a', 'b', 'c']`).
+     - **Trim Processing**: Each phoneme audio clip that has been sliced based on silence internally undergoes an additional `trim` process to completely remove any slight leading/trailing silence. This prevents unwanted empty noises during synthesis.
 
-- **Node.js (`FileSystemSampler`)**: 
-  Loads a single audio sprite file (`.wav`) from the local file system and automatically slices it.
-  - `audioFilePath` (1st Arg): Absolute or relative path to the local single audio sprite `.wav` file.
-
-- **Browser (`WebSampler`)**: 
-  Loads a single audio sprite (`.wav`) and automatically slices it into individual phonemes.
-  - `audioSrc` (1st Arg): URL of the single sprite audio file.
-
-- **In-Memory (`MemorySampler`)**:
-  Loads a single audio sprite (`.wav`) from a memory buffer (`ArrayBuffer` or `Uint8Array`) and automatically slices it.
-  - `buffer` (1st Arg): The memory buffer containing the audio sprite file data.
-
-### Phoneme Audio Data Structure
-
-**For both `FileSystemSampler` (Node.js) & `WebSampler` (Browser)**
-You provide a single sprite file (e.g., `sprite.wav`) containing all phoneme sounds played consecutively.
-You then map each slice to a phoneme using either an explicit `SpriteMap` or an ordered array of `string` labels.
-Both Node.js and Browser environments now share the exact same structure; only the source location (local file path vs HTTP URL) differs.
-
-> **Note**: If the corresponding sprite map slice is missing or the phoneme is not mapped, that specific character will be treated as silence during synthesis.
+3. **options** (3rd Arg - Optional):
+   - `maxRetries`: Maximum number of retries when loading the audio file. (Default: 3)
+   - `silenceThreshold`: When using the `string[]` method, if the amplitude of the audio is below this value, it's considered silence (0.0~1.0). It also affects the trim process for the sliced audio clips front and back. (Default: `0.01`)
+   - `minSilenceDurationMs`: When using the `string[]` method, this specifies how long (in milliseconds) the amplitude must stay equal to or below the `silenceThreshold` to be identified as an intact, fully-qualified silence section (splicing boundary point). Written in milliseconds. The default value is `20`. If the audio splits unexpectedly small or strange, it may be because a very short internal silence within a phoneme sound was incorrectly recognized as a slice boundary. In such cases, test by increasing this value (e.g., `50`). If it is a complex audio clip where adjusting values does not resolve the issue, we recommend using the `SpriteMap` approach to explicitly designate times.
 
 ### PitchManager Parameter Options (`PitchManagerOptions`)
 
 - `pitch`: The base tone of the voice. Higher is thinner, lower is deeper. (Default: 1.5)
 - `speed`: Speaking speed. Greater than 1.0 is faster, less than 1.0 is slower. (Default: 4.0)
 - `randomness`: Amount of random pitch change applied to each character. (Default: 0.1)
-- `melodyRate`: The rate at which the melody changes. Higher values make the pitch rise and fall faster. (Default 0.05)
-- `melodyAmplitude`: The amplitude of the melody change. Higher values make the pitch difference more distinct. (Default 0.1)
+- `melodyRate`: The rate at which the melody wave changes. Higher values make the pitch rise and fall faster. (Default: 0.05)
+- `melodyAmplitude`: The amplitude of the melody wave. Higher values make the pitch difference more distinct. (Default: 0.1)
 
-## Main Components
+## Main Components Structure
 
 ### Analyzers
+
 Analyzers separate text into the smallest phoneme structures tailored to the specific characteristics of the language.
-- `KoreanAnalyzer`: Precisely separates Korean text into onset, nucleus, and coda. Handles double consonants naturally.
+- `KoreanAnalyzer`: Precisely separates Korean text into onset, nucleus, and coda. Handles double consonants and diphthongs smoothly.
 - `EnglishAnalyzer`: Separates English text into alphabets ignoring case, and filters unsupported special characters.
 - `JapaneseAnalyzer`: Analyzes hiragana and katakana and separates them into individual phonemes.
 
 ### Creating Custom Analyzers
+
 You can easily create your own custom language analyzer by extending the exported base classes: `DecomposingAnalyzer` or `DictionaryAnalyzer`.
 
 #### Using DecomposingAnalyzer (Character-by-character)
+
 Ideal for languages where characters decompose mathematically into phonemes (like Korean).
 ```typescript
 import { DecomposingAnalyzer, PhonemeToken } from 'animalese-tts';
@@ -200,9 +217,10 @@ export class MyCustomAnalyzer extends DecomposingAnalyzer {
 ```
 
 #### Using DictionaryAnalyzer (Mapping-based)
-Ideal for languages where specific character sequences map directly to phoneme arrays (like Japanese). 
-When defining the array, each string element becomes a distinct phoneme block. 
-For example, `['tai']` is played as a single continuous piece (combining t, a, i at once like one letter), while `['ta', 'i']` plays as two separate pieces merged together (ta + i) and pronounced as two letters.
+
+Ideal for languages where specific character structures map 1:1 to specific phoneme arrays (like Japanese). 
+Each string element of the array becomes a single continuous phoneme block.
+For example, `['tai']` is played as a single continuous piece (combining t, a, i at once like one letter), while splitting it to `['ta', 'i']` plays as two independent pieces consecutively.
 
 ```typescript
 import { DictionaryAnalyzer, PhonemeToken } from 'animalese-tts';
@@ -213,31 +231,33 @@ export class MyMappedAnalyzer extends DictionaryAnalyzer {
     'あ': ['a'],
     // Combined pronunciation as one block
     'きゃ': ['kya'], 
-    // Two distinct pronunciations merged together
+    // Two distinct pronunciations merged together consecutively
     '大': ['ta', 'i'], 
   };
   
-  // You can optionally override `analyze` to add complex language-specific rules (like sokuon)
+  // You can optionally override the `analyze` method to add complex language-specific rules (like sokuon, etc).
 }
 ```
 
 ### Samplers
-Samplers load a single audio sprite file (`.wav`), decode it, and slice it into per-phoneme buffers.
-- `FileSystemSampler`: **Node.js only.** Reads a sprite `.wav` from the local file system.
-- `WebSampler`: **Browser only.** Fetches a sprite `.wav` via HTTP.
-- `MemorySampler`: Accepts an integrated `ArrayBuffer` or `Uint8Array` of audio data directly, decodes and slices it. Ideal for environments where fetch/fs is not available, or custom caching.
+
+A Sampler loads a single audio sprite (`.wav`) file, decodes it, and slices it into individual phoneme buffer clips.
+- `FileSystemSampler`: **Node.js only.** Reads a sprite `.wav` file from the local file system.
+- `WebSampler`: **Browser only.** Fetches a sprite `.wav` file via HTTP.
+- `MemorySampler`: Directly accepts an integrated `ArrayBuffer` or `Uint8Array` containing audio data to decode and slice. Ideal for environments where fetch/fs isn't available, or for using bespoke caching techniques.
 
 ### Playback Strategies (PlaybackStrategies)
-Responsible for delivering the stream audio data (`Float32Array`) generated by the `AnimaleseEngine`'s `AsyncGenerator` effectively to the end user.
-- `FilePlayer`: Saves (Exports) the synthesized audio in chunk forms to `.wav` files on the local disk in a Node.js environment.
-- `WebPlayer`: Plays the buffer immediately in a web browser using the Web Audio API (`AudioContext`).
+
+Responsible for securely conveying the streamed audio data (`Float32Array`) generated by the `AnimaleseEngine`'s `AsyncGenerator` to the final user's environment.
+- `FilePlayer`: Synthesizes audio in a Node.js environment and exports it as a `.wav` file to the local disk.
+- `WebPlayer`: Immediately plays buffers in the browser using the Web Audio API (`AudioContext`).
 
 ## Project Structure
 
 - `src/core`: Core logic including audio decoders, converters, and sample providers.
 - `src/analyzers`: Language-specific text analysis algorithms (Korean/English/Japanese)
 - `src/effects`: Audio effects processing such as pitch and speed adjustment
-- `src/playback`: Platform-specific playback strategies (Browser/Node)
+- `src/playback`: Platform-specific playback strategies (Browser/Node.js)
 - `src/interfaces.ts`: Main interfaces and type definitions
 
 ## License
