@@ -105,8 +105,7 @@
 
     let baseUrl = './sounds';
 
-    let sampleRate = 44100;
-    const player = new WebPlayer(sampleRate);
+    const player = new WebPlayer();
 
     // WebSampleProvider preload using a known list or let it block dynamically
     // For this demo, WebSampleProvider will fetch dynamically on-the-fly.
@@ -240,12 +239,12 @@
       const config = {
         analyzer,
         // WebSampler를 사용하는 기본 예제
-        sampler: new WebSampler(spriteWav, spriteMap, { maxRetries }),
-        
+        sampler: new WebSampler(spriteWav, spriteMap, { maxRetries, minSilenceDurationMs: 50 }),
+
         // MemorySampler를 사용하는 경우의 예제:
         // const arrayBuffer = await fetch(spriteWav).then(r => r.arrayBuffer());
         // sampler: new MemorySampler(arrayBuffer, spriteMap, { maxRetries }),
-        
+
         effect: new PitchManager({ pitch, speed, randomness, melodyRate, melodyAmplitude }),
         spaceDelay,
         punctuationDelay,
@@ -259,7 +258,8 @@
 
         log(`[Client] 스프라이트 파일 로드 중...`);
         await engine.load(speaker);
-        log(`[Client] 스프라이트 로드 완료`);
+        player.sampleRate = config.sampler.sampleRate ?? 44100;
+        log(`[Client] 스프라이트 로드 완료 (sampleRate: ${config.sampler.sampleRate ?? 44100}Hz)`);
 
         const typedTextEl = document.getElementById('typedTextContainer');
         typedTextEl.textContent = '';

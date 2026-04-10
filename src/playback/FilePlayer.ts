@@ -9,10 +9,22 @@ import * as crypto from 'node:crypto'
  */
 export class FilePlayer implements FilePlaybackStrategy {
   public volume: number = 1.0
-  private sampleRate: number
+  private _sampleRate: number
 
-  constructor(sampleRate: number) {
-    this.sampleRate = sampleRate
+  constructor(sampleRate: number = 44100) {
+    this._sampleRate = sampleRate
+  }
+
+  get sampleRate(): number {
+    return this._sampleRate
+  }
+
+  /**
+   * Updates the sample rate used when encoding WAV output files.
+   * Set this after loading the sampler to match the source WAV's actual rate.
+   */
+  set sampleRate(rate: number) {
+    this._sampleRate = rate
   }
 
   /**

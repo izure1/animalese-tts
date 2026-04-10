@@ -2,20 +2,58 @@ import type { AudioPlaybackStrategy } from '../interfaces'
 
 /**
  * Playback strategy for browser environments using the Web Audio API.
+ *
+ * If no sampleRate is provided in the constructor, the AudioContext is created
+ * lazily on the first play() call using the browser's native rate.
+ * After loading a sampler, set `player.sampleRate = sampler.sampleRate`
+ * to ensure the buffer sample rate matches the source WAV file.
  */
 export class WebPlayer implements AudioPlaybackStrategy {
   public volume: number = 1.0
-  private audioContext: AudioContext
-  private sampleRate: number
+  private _audioContext: AudioContext | undefined
+  private _sampleRate: number | undefined
 
-  constructor(sampleRate: number) {
+  constructor(sampleRate?: number) {
+    this._sampleRate = sampleRate
+    if (sampleRate !== undefined) {
+      this._initAudioContext(sampleRate)
+    }
+  }
+
+  get sampleRate(): number | undefined {
+    return this._sampleRate
+  }
+
+  /**
+   * Updates the sample rate. If the AudioContext already exists with a different
+   * rate, it will be closed and recreated with the new rate.
+   */
+  set sampleRate(rate: number) {
+    if (this._sampleRate === rate) return
+    this._sampleRate = rate
+    this._audioContext?.close()
+    this._initAudioContext(rate)
+  }
+
+  private _initAudioContext(sampleRate: number): void {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
     if (!AudioContextClass) {
       throw new Error('이 브라우저는 Web Audio API를 지원하지 않습니다.')
     }
+    this._audioContext = new AudioContextClass({ sampleRate })
+  }
 
-    this.audioContext = new AudioContextClass({ sampleRate })
-    this.sampleRate = sampleRate
+  private get audioContext(): AudioContext {
+    if (!this._audioContext) {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+      if (!AudioContextClass) {
+        throw new Error('이 브라우저는 Web Audio API를 지원하지 않습니다.')
+      }
+      // sampleRate 미지정 시 브라우저 기본 rate로 생성
+      this._audioContext = new AudioContextClass()
+      this._sampleRate = this._audioContext.sampleRate
+    }
+    return this._audioContext
   }
 
   /**
@@ -23,18 +61,20 @@ export class WebPlayer implements AudioPlaybackStrategy {
    * @param bufferData The audio data to play.
    */
   public async play(bufferData: Float32Array): Promise<void> {
-    const audioBuffer = this.audioContext.createBuffer(1, bufferData.length, this.sampleRate)
+    const ctx = this.audioContext
+    const sr = this._sampleRate ?? ctx.sampleRate
+    const audioBuffer = ctx.createBuffer(1, bufferData.length, sr)
     audioBuffer.copyToChannel(bufferData as any, 0)
 
-    const sourceNode = this.audioContext.createBufferSource()
+    const sourceNode = ctx.createBufferSource()
     sourceNode.buffer = audioBuffer
     sourceNode.playbackRate.value = 1.0
 
-    const gainNode = this.audioContext.createGain()
+    const gainNode = ctx.createGain()
     gainNode.gain.value = this.volume
 
     sourceNode.connect(gainNode)
-    gainNode.connect(this.audioContext.destination)
+    gainNode.connect(ctx.destination)
 
     return new Promise((resolve) => {
       sourceNode.onended = () => resolve()

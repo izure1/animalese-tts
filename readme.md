@@ -51,9 +51,7 @@ import {
   WebPlayer
 } from 'https://cdn.jsdelivr.net/npm/animalese-tts/+esm'
 
-const sampleRate = 48000
-const player = new WebPlayer(sampleRate)
-
+const player = new WebPlayer()
 const engine = new AnimaleseEngine({
   analyzer: new EnglishAnalyzer(),
   sampler: new WebSampler(
@@ -94,10 +92,7 @@ import {
   FilePlayer
 } from 'animalese-tts'
 
-const sampleRate = 48000
-
-const player = new FilePlayer(sampleRate)
-
+const player = new FilePlayer()
 const engine = new AnimaleseEngine({
   analyzer: new KoreanAnalyzer(),
   sampler: new FileSystemSampler(
