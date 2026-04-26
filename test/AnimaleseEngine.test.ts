@@ -36,8 +36,8 @@ describe('AnimaleseEngine (Full OOP DI Pattern)', () => {
     await sampler.loadSample('ㅕ', buffer)
 
     // '안녕' -> 'ㅏ', 'ㄴ', 'ㄴ', 'ㅕ', 'ㅇ'(생략) -> '안', '녕' 각각 병합되어 총 2번의 오디오 재생이 유효함
+    await engine.load()
     const speaker = engine.synthesize('안녕')
-    await engine.load(speaker)
     for await (const result of speaker.speak()) {
       await mockStrategy.play(result.buffer as Float32Array)
     }
@@ -81,8 +81,8 @@ describe('AnimaleseEngine (EnglishAnalyzer)', () => {
     await sampler.loadSample('o', buffer)
 
     // 'Hello!!' -> 대문자 소문자화 -> 'h'+'e', 'l'+'l'+'o' (총 2그룹), '!'구두점 딜레이 2번 = 4번
+    await engine.load()
     const speaker = engine.synthesize('Hello!!')
-    await engine.load(speaker)
     for await (const result of speaker.speak()) {
       await mockStrategy.play(result.buffer as Float32Array)
     }

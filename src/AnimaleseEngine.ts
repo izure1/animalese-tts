@@ -39,9 +39,8 @@ export class AnimaleseEngine {
   /**
    * Loads the sampler (e.g. fetches and slices the audio sprite file).
    * Must be called and awaited before calling speaker.speak().
-   * @param speaker The TTSSpeaker instance returned by synthesize().
    */
-  public async load(_speaker: TTSSpeaker): Promise<void> {
+  public async load(): Promise<void> {
     return this.config.sampler.load()
   }
 }
